@@ -8,15 +8,16 @@
 
 | No | Nama Lengkap | NIM | Peran / Kontribusi |
 |:--:|:-------------|:---:|:-------------------|
-| 1  | [Nama Lengkap Anggota 1] | [NIM Anggota 1] | [Project Lead / Fullstack Developer] |
-| 2  | [Nama Lengkap Anggota 2] | [NIM Anggota 2] | [Frontend Developer / UI/UX] |
-| 3  | [Nama Lengkap Anggota 3] | [NIM Anggota 3] | [Backend & AI Developer] |
-| 4  | [Nama Lengkap Anggota 4] | [NIM Anggota 4] | [QA / Technical Documentation] |
+| 1  | [Robi Muhamad Wahyudi] | [41257149] | [Computer Vision & ML Engineer (Web & Image Processing)] |
+| 2  | [Robi Muhamad Wahyudi] | [41257156] | [Project Manager, Lead Integrator & Quality Assurance] |
+| 3  | [Satria Fibi Saputra] | [41257159] | [Frontend Web Developer (React / Next.js / Vue) |
+| 4  | [Ubai Datul Hamida] | [41257165] | [AI Assistant & RAG Engineer (LLM & Knowledge Base)] |
+| 5  | [Wichal Adtiya Purnama] | [41257167] | [Backend & Database Engineer (REST API & Cloud Storage)] |
 
-- **Nomor Kelompok** : [Nomor Kelompok]
-- **Kelas / Program Studi** : [Nama Kelas / Program Studi]
+- **Nama Kelompok** : [Cangkol Perangkat Lunak]
+- **Kelas / Program Studi** : [1C / Teknik Informatika]
 - **Mata Kuliah** : Rekayasa Perangkat Lunak (RPL)
-- **Dosen Pengampu** : [Nama Dosen Pengampu]
+- **Dosen Pengampu** : [Yudhistira Arie Wijaya, M.Kom]
 - **Tahun Akademik** : 2026/2027
 
 ---
