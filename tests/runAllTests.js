@@ -3,6 +3,7 @@ process.env.NODE_ENV = 'test';
 process.env.WHATSAPP_PROVIDER = 'mock';
 process.env.SESSION_SECRET = process.env.SESSION_SECRET || 'skincheck-ci-test-secret-key';
 process.env.OTP_SECRET_KEY = process.env.OTP_SECRET_KEY || 'skincheck-ci-otp-hmac-key';
+process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || 'skincheck_webhook_secret_verify_token';
 
 const fs = require('fs');
 const path = require('path');

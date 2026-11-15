@@ -34,6 +34,7 @@ jobs:
         run: |
           cp .env.example .env
           sed -i 's/WHATSAPP_PROVIDER=meta/WHATSAPP_PROVIDER=mock/g' .env
+          sed -i 's/WHATSAPP_WEBHOOK_VERIFY_TOKEN=/WHATSAPP_WEBHOOK_VERIFY_TOKEN=skincheck_webhook_secret_verify_token/g' .env
           if [ -f data/users.example.json ] && [ ! -f data/users.json ]; then
             cp data/users.example.json data/users.json
           fi
@@ -49,18 +50,11 @@ jobs:
 
       - name: 6. Execute Automated Test Suites
         run: |
-          node tests/runAllTests.js > test_results.log 2>&1 || {
-            echo "--- TEST LOG OUTPUT ---"
-            cat test_results.log
-            while IFS= read -r line; do
-              echo "::error::$line"
-            done < <(grep -E 'FAILED|Error|Assertion|✖' test_results.log | head -n 20)
-            exit 1
-          }
-          cat test_results.log
+          npm test
         env:
           NODE_ENV: test
           PORT: 3000
           WHATSAPP_PROVIDER: mock
           SESSION_SECRET: skincheck-ci-test-secret-key
           OTP_SECRET_KEY: skincheck-ci-otp-hmac-key
+          WHATSAPP_WEBHOOK_VERIFY_TOKEN: skincheck_webhook_secret_verify_token
