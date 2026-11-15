@@ -5,7 +5,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch: # Memungkinkan eksekusi manual dari tab Actions di GitHub
+  workflow_dispatch:
 
 jobs:
   test:
@@ -48,7 +48,20 @@ jobs:
           find tests -name "*.js" -exec node -c {} +
 
       - name: 6. Execute Automated Test Suites
-        run: npm test
+        run: |
+          node tests/runAllTests.js > test_results.log 2>&1 || {
+            echo "### ❌ Test Run Failed on Node.js ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            cat test_results.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat test_results.log
+            exit 1
+          }
+          echo "### ✅ All Test Suites Passed on Node.js ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          cat test_results.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat test_results.log
         env:
           NODE_ENV: test
           PORT: 3000
