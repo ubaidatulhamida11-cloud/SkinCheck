@@ -1,0 +1,55 @@
+name: SkinCheck CI - Automated Testing Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: # Memungkinkan eksekusi manual dari tab Actions di GitHub
+
+jobs:
+  test:
+    name: Run Unit & Integration Tests (Node.js ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [ 18.x, 20.x ]
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 2. Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: 3. Install Dependencies
+        run: npm ci
+
+      - name: 4. Setup Test Environment & Database Templates
+        run: |
+          cp .env.example .env
+          if [ -f data/users.example.json ] && [ ! -f data/users.json ]; then
+            cp data/users.example.json data/users.json
+          fi
+          if [ -f data/system_config.example.json ] && [ ! -f data/system_config.json ]; then
+            cp data/system_config.example.json data/system_config.json
+          fi
+
+      - name: 5. Code Syntax Verification
+        run: |
+          node -c server.js
+          find src -name "*.js" -exec node -c {} +
+          find tests -name "*.js" -exec node -c {} +
+
+      - name: 6. Execute Automated Test Suites
+        run: npm test
+        env:
+          NODE_ENV: test
+          PORT: 3000
+          WHATSAPP_PROVIDER: mock
+          SESSION_SECRET: skincheck-ci-test-secret-key
+          OTP_SECRET_KEY: skincheck-ci-otp-hmac-key

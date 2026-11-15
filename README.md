@@ -1,6 +1,7 @@
 # SkinCheck - Smart Skin Health Analysis & Care Assistant
 > **Tugas Besar UAS Rekayasa Perangkat Lunak (RPL)**  
-> Repository: [https://github.com/ubaidatulhamida11-cloud/SkinCheck.git](https://github.com/ubaidatulhamida11-cloud/SkinCheck.git)
+> Repository: [https://github.com/ubaidatulhamida11-cloud/SkinCheck.git](https://github.com/ubaidatulhamida11-cloud/SkinCheck.git)  
+> [![SkinCheck CI](https://github.com/ubaidatulhamida11-cloud/SkinCheck/actions/workflows/ci.yml/badge.svg)](https://github.com/ubaidatulhamida11-cloud/SkinCheck/actions/workflows/ci.yml)
 
 ---
 
@@ -285,12 +286,31 @@ npm start
 - Klik dua kali berkas `Buka_SkinCheck.bat` yang berada di root direktori project. Skrip ini akan menyalakan server Node.js dan membuka browser secara otomatis.
 - Untuk menghentikan server, klik dua kali berkas `Hentikan_SkinCheck.bat`.
 
-### 7.7 Menjalankan Pengujian Otomatis (*Automated Tests*)
-Aplikasi telah dilengkapi dengan *test suite* menyeluruh (mencakup unit test phone normalizer, OTP security, WhatsApp providers, login notifications, dan integrasi rute):
+### 7.7 Menjalankan Pengujian Otomatis (*Automated Tests*) & CI/CD Pipeline
+Aplikasi telah dilengkapi dengan **11 Automated Test Suites** menyeluruh yang mencakup pengujian unit dan integrasi:
+1. `Phone Normalizer Unit Tests`: Validasi dan standardisasi nomor WhatsApp ke format E.164.
+2. `OTP Service Core Security Tests`: Pengujian siklus hidup kode OTP, HMAC-SHA256, dan pembatasan percobaan (*rate limiting*).
+3. `WhatsApp Providers (Meta & Mock) Tests`: Pengujian gateway WhatsApp multi-provider dan mode simulasi.
+4. `AI Safety & Guardrails Service Tests`: Validasi filter keamanan medis darurat dan pencegahan instruksi non-topik (*coding filter*).
+5. `Skin Analysis (Computer Vision / Mock) Tests`: Pengujian kalkulasi metrik skor jerawat, kemerahan, tekstur, hiperpigmentasi, dan skor total.
+6. `Sunscreen Analysis Service Tests`: Pengujian estimasi kerataan tabir surya dan deteksi area minim proteksi.
+7. `Product Model & Catalog Service Tests`: Pengujian integritas katalog produk skincare dan penyaringan berdasarkan kategori.
+8. `WhatsApp OTP API Endpoints Integration Tests`: Pengujian endpoint REST API autentikasi WhatsApp.
+9. `Existing Auth Regression Tests`: Pengujian regresi alur registrasi dan login kata sandi konvensional.
+10. `System Configuration & Super Admin Tests`: Pengujian hak akses super admin, penyembunyian kredensial rahasia (*masking*), dan audit log.
+11. `WhatsApp Login Activity Notification Tests`: Pengujian deteksi perangkat dan pengiriman notifikasi keamanan saat login.
+
+**Cara Menjalankan Pengujian di Komputer Lokal:**
 ```bash
 npm test
 ```
 *(Atau `node tests/runAllTests.js`)*
+
+**Integrasi Continuous Integration (CI/CD) via GitHub Actions:**
+- File konfigurasi: `.github/workflows/ci.yml`.
+- Berjalan otomatis setiap kali ada `push` atau `pull request` ke branch `main`.
+- Menjalankan matrix testing pada Node.js 18.x dan 20.x, verifikasi sintaks kode secara otomatis, dan eksekusi seluruh 11 test suite.
+- Status build pipeline dapat dipantau langsung pada tab **Actions** di repository GitHub.
 
 ### 7.8 Cara Mengakses Aplikasi
 Setelah server aktif di terminal:
