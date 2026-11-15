@@ -1,7 +1,49 @@
+// Force test environment and mock WhatsApp provider before anything is imported
+process.env.NODE_ENV = 'test';
+process.env.WHATSAPP_PROVIDER = 'mock';
+process.env.SESSION_SECRET = process.env.SESSION_SECRET || 'skincheck-ci-test-secret-key';
+process.env.OTP_SECRET_KEY = process.env.OTP_SECRET_KEY || 'skincheck-ci-otp-hmac-key';
+
 const fs = require('fs');
 const path = require('path');
 
-// Load environment configuration
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+});
+
+// Setup seed data in fresh/CI environments BEFORE running migration
+const dataDir = path.join(__dirname, '../data');
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+}
+
+const usersFile = path.join(dataDir, 'users.json');
+const usersExample = path.join(dataDir, 'users.example.json');
+if (!fs.existsSync(usersFile) || (fs.existsSync(usersFile) && JSON.parse(fs.readFileSync(usersFile, 'utf8') || '[]').length === 0)) {
+    if (fs.existsSync(usersExample)) {
+        fs.copyFileSync(usersExample, usersFile);
+        console.log('[Test Setup] Initialized users.json from users.example.json');
+    }
+}
+
+const configFilePath = path.join(dataDir, 'system_config.json');
+const configExample = path.join(dataDir, 'system_config.example.json');
+if (!fs.existsSync(configFilePath)) {
+    if (fs.existsSync(configExample)) {
+        fs.copyFileSync(configExample, configFilePath);
+        console.log('[Test Setup] Initialized system_config.json from system_config.example.json');
+    }
+}
+
+// Ensure mock provider is active as default
+const { setProvider, MockWhatsAppProvider } = require('../src/services/whatsapp');
+const globalMockProvider = new MockWhatsAppProvider();
+setProvider(globalMockProvider);
+
+// Load environment configuration & run database migration
 require('../src/config/env');
 const { runMigration } = require('../src/database/migrate');
 
@@ -10,28 +52,7 @@ async function main() {
     console.log('          SkinCheck - Automated Test Suite          ');
     console.log('====================================================\n');
 
-    // Ensure database migration has initialized tables
     runMigration();
-
-    // Ensure seed data exists for tests in fresh/CI environments
-    const dataDir = path.join(__dirname, '../data');
-    const usersFile = path.join(dataDir, 'users.json');
-    const usersExample = path.join(dataDir, 'users.example.json');
-    if (!fs.existsSync(usersFile) || (fs.existsSync(usersFile) && JSON.parse(fs.readFileSync(usersFile, 'utf8') || '[]').length === 0)) {
-        if (fs.existsSync(usersExample)) {
-            fs.copyFileSync(usersExample, usersFile);
-            console.log('[Test Setup] Initialized users.json from users.example.json');
-        }
-    }
-
-    const configFilePath = path.join(dataDir, 'system_config.json');
-    const configExample = path.join(dataDir, 'system_config.example.json');
-    if (!fs.existsSync(configFilePath)) {
-        if (fs.existsSync(configExample)) {
-            fs.copyFileSync(configExample, configFilePath);
-            console.log('[Test Setup] Initialized system_config.json from system_config.example.json');
-        }
-    }
 
     const suites = [
         { name: 'Phone Normalizer Unit Tests', fn: require('./unit/phoneNormalizer.test') },
@@ -59,7 +80,7 @@ async function main() {
         } catch (err) {
             failed++;
             console.error(`✖ FAILED: ${suite.name}`);
-            console.error(err);
+            console.error(err.stack || err);
             errors.push({ suite: suite.name, error: err });
         }
     }
@@ -72,7 +93,10 @@ async function main() {
     console.log('====================================================');
 
     if (failed > 0) {
-        console.error('\nTests completed with failures.');
+        console.error('\nTests completed with failures:');
+        errors.forEach(e => {
+            console.error(`- ${e.suite}: ${e.error.message || e.error}`);
+        });
         process.exit(1);
     } else {
         console.log('\n✔ All tests completed successfully!');
@@ -81,6 +105,6 @@ async function main() {
 }
 
 main().catch(err => {
-    console.error('Test runner fatal error:', err);
+    console.error('Test runner fatal error:', err.stack || err);
     process.exit(1);
 });

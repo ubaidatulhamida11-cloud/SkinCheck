@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         node-version: [ 18.x, 20.x ]
 
@@ -32,6 +33,7 @@ jobs:
       - name: 4. Setup Test Environment & Database Templates
         run: |
           cp .env.example .env
+          sed -i 's/WHATSAPP_PROVIDER=meta/WHATSAPP_PROVIDER=mock/g' .env
           if [ -f data/users.example.json ] && [ ! -f data/users.json ]; then
             cp data/users.example.json data/users.json
           fi
