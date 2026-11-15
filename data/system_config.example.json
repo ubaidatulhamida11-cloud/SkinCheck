@@ -1,0 +1,125 @@
+{
+  "ai": {
+    "active_provider": "gemini",
+    "providers": {
+      "gemini": {
+        "name": "Google Gemini AI",
+        "api_key": "",
+        "is_active": true,
+        "default_model": "gemini-3.5-flash-lite",
+        "last_tested_at": null,
+        "last_status": "unknown",
+        "last_error": null
+      },
+      "openai": {
+        "name": "OpenAI (ChatGPT / GPT-4o)",
+        "api_key": "",
+        "api_base_url": "https://api.openai.com/v1",
+        "is_active": true,
+        "default_model": "gpt-4o-mini",
+        "last_tested_at": null,
+        "last_status": "unknown",
+        "last_error": null
+      },
+      "custom_ai": {
+        "name": "Custom / OpenAI-Compatible (Groq, DeepSeek, OpenRouter)",
+        "api_key": "",
+        "api_base_url": "https://api.groq.com/openai/v1",
+        "is_active": true,
+        "default_model": "llama-3.3-70b-versatile",
+        "last_tested_at": null,
+        "last_status": "unknown",
+        "last_error": null
+      },
+      "claude": {
+        "name": "Anthropic Claude",
+        "api_key": "",
+        "api_base_url": "https://api.anthropic.com/v1",
+        "is_active": true,
+        "default_model": "claude-3-5-haiku-20241022",
+        "last_tested_at": null,
+        "last_status": "unknown",
+        "last_error": null
+      },
+      "local_knowledge": {
+        "name": "SkinCheck Database Knowledge Engine (Fallback & Offline)",
+        "api_key": "",
+        "is_active": true,
+        "default_model": "local-knowledge-v1",
+        "last_tested_at": null,
+        "last_status": "connected",
+        "last_error": null
+      }
+    },
+    "models": [
+      {
+        "id": "gemini-3.5-flash-lite",
+        "name": "Gemini 3.5 Flash Lite (Cepat & Efisien)",
+        "provider": "gemini",
+        "is_active": true,
+        "is_default": true,
+        "max_tokens": 1000,
+        "temperature": 0.7,
+        "timeout_ms": 10000,
+        "retry_count": 2,
+        "supports_vision": true,
+        "description": "Model default Google yang cepat, cerdas, dan hemat kuota untuk asisten chatbot SkinCheck."
+      }
+    ],
+    "assistant": {
+      "name": "SkinCheck AI Assistant",
+      "language": "id",
+      "communication_style": "Ramah & Profesional",
+      "max_response_length": 150,
+      "is_active": true,
+      "system_instruction": "Anda adalah SkinCheck AI Assistant, asisten edukasi perawatan kulit berbasis kecerdasan buatan. Bantu pengguna memahami kondisi kulit, rutinitas skincare, dan rekomendasi produk yang cocok.",
+      "fallback_message": "Halo! Saya adalah asisten AI SkinCheck. Maaf, sistem sedang mengalami kendala teknis sementara."
+    }
+  },
+  "whatsapp": {
+    "active_provider": "mock",
+    "providers": {
+      "fonnte": {
+        "name": "Fonnte WhatsApp Gateway",
+        "token": "",
+        "api_base_url": "https://api.fonnte.com/send",
+        "last_tested_at": null,
+        "last_status": "unknown",
+        "last_error": null
+      },
+      "meta": {
+        "name": "Meta WhatsApp Cloud API (Official)",
+        "access_token": "",
+        "phone_number_id": "",
+        "business_account_id": "",
+        "api_base_url": "https://graph.facebook.com/v21.0",
+        "template_name": "skincheck_verification",
+        "template_lang": "id",
+        "last_tested_at": null,
+        "last_status": "unknown",
+        "last_error": null
+      },
+      "mock": {
+        "name": "Mock WhatsApp Provider (Testing/Dev)",
+        "is_active": true,
+        "last_tested_at": null,
+        "last_status": "connected",
+        "last_error": null
+      }
+    },
+    "otp_settings": {
+      "expiration_seconds": 300,
+      "resend_cooldown_seconds": 60,
+      "max_attempts": 5,
+      "digit_length": 6,
+      "rate_limit_window_minutes": 15,
+      "rate_limit_max_per_phone": 5,
+      "rate_limit_max_per_ip": 10
+    },
+    "login_notification": {
+      "enabled": true,
+      "template": "Notifikasi Keamanan SkinCheck\n\nHalo, {name}!\n\nKami mendeteksi aktivitas login baru pada akun SkinCheck Anda.\n\nDetail aktivitas:\n- Waktu login: {time}\n- Perangkat: {device}\n- Browser: {browser}\n- Lokasi perkiraan: {location}\n\nJika ini adalah aktivitas Anda, tidak diperlukan tindakan lebih lanjut.\n\nTerima kasih telah menggunakan SkinCheck.",
+      "max_retries": 2
+    }
+  }
+}

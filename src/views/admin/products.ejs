@@ -1,0 +1,343 @@
+<div style="margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+    <div>
+        <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text-main, #1e293b); margin-bottom: 6px;">Katalog Produk Skincare</h1>
+        <p style="color: var(--text-muted, #64748b); margin: 0; font-size: 0.95rem;">Daftar produk yang digunakan oleh sistem AI untuk rekomendasi perawatan kulit. Perubahan langsung disinkronkan ke Chatbot AI.</p>
+    </div>
+    <button type="button" class="btn btn-primary" onclick="openAddProductModal()" style="border-radius: 8px; font-weight: 700; padding: 10px 18px; display: flex; align-items: center; gap: 8px;">
+        <span>➕</span> Tambah Produk Baru
+    </button>
+</div>
+
+<div class="stat-card" style="padding: 24px; margin-bottom: 25px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <span style="font-weight: 700; color: var(--text-main, #1e293b); font-size: 1rem;">
+            Total: <span id="product-total-count"><%= locals.products ? products.length : 0 %></span> Produk Terdaftar
+        </span>
+        <span class="badge-status-active">
+            ● <%= locals.products ? products.filter(p => p.status === 'active').length : 0 %> Aktif
+        </span>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="data-table" id="products-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nama Produk</th>
+                    <th>Brand</th>
+                    <th>Kategori</th>
+                    <th>Masalah Kulit</th>
+                    <th>Status</th>
+                    <th style="text-align: center; width: 140px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (locals.products && products.length > 0) { %>
+                    <% products.forEach(p => { %>
+                        <tr id="prod-row-<%= p.id %>">
+                            <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-muted, #64748b);"><%= p.id %></td>
+                            <td style="font-weight: 600; color: var(--text-main, #1e293b);"><%= p.name %></td>
+                            <td><%= p.brand || '-' %></td>
+                            <td>
+                                <span style="background: rgba(108, 92, 231, 0.1); color: #6C5CE7; padding: 4px 10px; border-radius: 12px; font-size: 0.82rem; font-weight: 600;">
+                                    <%= p.category %>
+                                </span>
+                            </td>
+                            <td>
+                                <% if (p.skin_concern && Array.isArray(p.skin_concern)) { %>
+                                    <%= p.skin_concern.join(', ') %>
+                                <% } else { %>
+                                    -
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (p.status === 'active') { %>
+                                    <span class="badge-status-active">● Aktif</span>
+                                <% } else { %>
+                                    <span style="background: rgba(148, 163, 184, 0.2); color: var(--text-muted, #94a3b8); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;"><%= p.status %></span>
+                                <% } %>
+                            </td>
+                            <td style="text-align: center;">
+                                <div style="display: flex; gap: 8px; justify-content: center;">
+                                    <button type="button" class="btn btn-secondary btn-edit-product" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 6px;"
+                                        data-id="<%= p.id %>"
+                                        data-name="<%= p.name %>"
+                                        data-brand="<%= p.brand || '' %>"
+                                        data-category="<%= p.category %>"
+                                        data-concerns="<%= (p.skin_concern && Array.isArray(p.skin_concern)) ? p.skin_concern.join(', ') : '' %>"
+                                        data-desc="<%= p.description || '' %>"
+                                        data-status="<%= p.status || 'active' %>">
+                                        ✏️ Edit
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-delete-product" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; color: var(--error); border-color: rgba(214, 48, 49, 0.3);"
+                                        data-id="<%= p.id %>"
+                                        data-name="<%= p.name %>">
+                                        🗑️ Hapus
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--text-muted, #94a3b8); padding: 30px;">Tidak ada produk di database.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Tambah / Edit Produk -->
+<div id="productModal" class="modal-overlay">
+    <div class="modal-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 id="product-modal-title" style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-main);">✏️ Edit Data Produk</h3>
+            <button type="button" onclick="closeProductModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer;">&times;</button>
+        </div>
+
+        <form id="productForm" onsubmit="submitProductForm(event)">
+            <input type="hidden" id="prod-id" name="id">
+
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Nama Produk</label>
+                <input type="text" id="prod-name" name="name" class="form-control" required style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Brand</label>
+                    <input type="text" id="prod-brand" name="brand" class="form-control" placeholder="SkinCheck Basics" style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Kategori</label>
+                    <select id="prod-category" name="category" class="form-control" style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+                        <option value="Cleanser">Cleanser</option>
+                        <option value="Serum">Serum</option>
+                        <option value="Moisturizer">Moisturizer</option>
+                        <option value="Sunscreen">Sunscreen</option>
+                        <option value="Treatment">Treatment</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Target Masalah Kulit (Pisahkan dengan koma)</label>
+                <input type="text" id="prod-concerns" name="skin_concern" class="form-control" placeholder="jerawat, kemerahan, kusam" style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Deskripsi Singkat</label>
+                <textarea id="prod-desc" name="description" rows="2" class="form-control" style="width: 100%; padding: 10px 14px; border-radius: 8px;"></textarea>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Status Produk</label>
+                <select id="prod-status" name="status" class="form-control" style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+                    <option value="active">● Aktif (Tersedia untuk Rekomendasi AI)</option>
+                    <option value="inactive">Nonaktif / Resep Khusus</option>
+                </select>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeProductModal()" style="padding: 9px 18px; border-radius: 8px;">Batal</button>
+                <button type="submit" id="btn-save-product" class="btn btn-primary" style="padding: 9px 20px; border-radius: 8px;">Simpan Produk</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let isEditingProduct = false;
+
+function openAddProductModal() {
+    isEditingProduct = false;
+    document.getElementById('product-modal-title').textContent = '➕ Tambah Produk Skincare Baru';
+    document.getElementById('prod-id').value = '';
+    document.getElementById('prod-name').value = '';
+    document.getElementById('prod-brand').value = 'SkinCheck Basics';
+    document.getElementById('prod-category').value = 'Moisturizer';
+    document.getElementById('prod-concerns').value = '';
+    document.getElementById('prod-desc').value = '';
+    document.getElementById('prod-status').value = 'active';
+    document.getElementById('productModal').style.display = 'flex';
+}
+
+function openEditProductModal(id, name, brand, category, concerns, desc, status) {
+    isEditingProduct = true;
+    document.getElementById('product-modal-title').textContent = '✏️ Edit Data Produk';
+    document.getElementById('prod-id').value = id;
+    document.getElementById('prod-name').value = name;
+    document.getElementById('prod-brand').value = brand || '';
+    document.getElementById('prod-category').value = category || 'Cleanser';
+    document.getElementById('prod-concerns').value = concerns || '';
+    document.getElementById('prod-desc').value = desc || '';
+    document.getElementById('prod-status').value = status || 'active';
+    document.getElementById('productModal').style.display = 'flex';
+}
+
+function closeProductModal() {
+    document.getElementById('productModal').style.display = 'none';
+}
+
+window.addEventListener('click', (e) => {
+    const modal = document.getElementById('productModal');
+    if (e.target === modal) {
+        closeProductModal();
+    }
+});
+
+async function submitProductForm(e) {
+    e.preventDefault();
+    const id = document.getElementById('prod-id').value;
+    const name = document.getElementById('prod-name').value.trim();
+    const brand = document.getElementById('prod-brand').value.trim();
+    const category = document.getElementById('prod-category').value;
+    const skin_concern = document.getElementById('prod-concerns').value.trim();
+    const description = document.getElementById('prod-desc').value.trim();
+    const status = document.getElementById('prod-status').value;
+
+    const btn = document.getElementById('btn-save-product');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    const url = isEditingProduct ? `/admin/products/${id}/edit` : `/admin/products/add`;
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ name, brand, category, skin_concern, description, status })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            closeProductModal();
+            if (window.showCenteredAlert) {
+                await window.showCenteredAlert({
+                    title: isEditingProduct ? 'Perubahan Produk Berhasil Disimpan' : 'Produk Berhasil Ditambahkan',
+                    desc: `Produk "${name}" telah berhasil disimpan ke katalog database dan otomatis disinkronkan ke Chatbot AI.`,
+                    icon: '✏️',
+                    type: 'edit',
+                    btnText: 'Selesai'
+                });
+            }
+            window.location.reload();
+        } else {
+            if (window.showCenteredAlert) {
+                await window.showCenteredAlert({
+                    title: 'Gagal Menyimpan Produk',
+                    desc: data.message || 'Terjadi kesalahan saat menyimpan data produk.',
+                    icon: '⚠️',
+                    type: 'error',
+                    btnText: 'Tutup'
+                });
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        if (window.showCenteredAlert) {
+            await window.showCenteredAlert({
+                title: 'Gangguan Jaringan',
+                desc: 'Tidak dapat terhubung ke server. Silakan coba lagi.',
+                icon: '⚠️',
+                type: 'error',
+                btnText: 'Tutup'
+            });
+        }
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Simpan Produk';
+    }
+}
+
+async function confirmDeleteProduct(id, name) {
+    let confirmed = false;
+    if (window.showCenteredConfirm) {
+        confirmed = await window.showCenteredConfirm({
+            title: 'Hapus Produk Skincare',
+            desc: `Apakah Anda yakin ingin menghapus produk "${name}" dari katalog database? AI tidak akan merekomendasikan produk ini lagi.`,
+            confirmText: 'Ya, Hapus Produk',
+            cancelText: 'Batal',
+            icon: '🗑️',
+            confirmBg: '#ef4444'
+        });
+    } else {
+        confirmed = confirm(`Apakah Anda yakin ingin menghapus produk "${name}"?`);
+    }
+
+    if (confirmed) {
+        try {
+            const res = await fetch(`/admin/products/${id}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                if (window.showCenteredAlert) {
+                    await window.showCenteredAlert({
+                        title: 'Produk Berhasil Dihapus',
+                        desc: `Produk "${name}" telah dihapus dari katalog dan otomatis diperbarui di Chatbot AI.`,
+                        icon: '🗑️',
+                        type: 'error',
+                        btnText: 'Selesai'
+                    });
+                }
+                const row = document.getElementById(`prod-row-${id}`);
+                if (row) row.remove();
+                window.location.reload();
+            } else {
+                if (window.showCenteredAlert) {
+                    await window.showCenteredAlert({
+                        title: 'Gagal Menghapus Produk',
+                        desc: data.message || 'Terjadi kendala saat menghapus produk.',
+                        icon: '⚠️',
+                        type: 'error',
+                        btnText: 'Tutup'
+                    });
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            if (window.showCenteredAlert) {
+                await window.showCenteredAlert({
+                    title: 'Gangguan Jaringan',
+                    desc: 'Terjadi kesalahan jaringan saat menghapus produk.',
+                    icon: '⚠️',
+                    type: 'error',
+                    btnText: 'Tutup'
+                });
+            }
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.btn-edit-product').forEach(btn => {
+        btn.addEventListener('click', () => {
+            openEditProductModal(
+                btn.dataset.id,
+                btn.dataset.name,
+                btn.dataset.brand,
+                btn.dataset.category,
+                btn.dataset.concerns,
+                btn.dataset.desc,
+                btn.dataset.status
+            );
+        });
+    });
+
+    document.querySelectorAll('.btn-delete-product').forEach(btn => {
+        btn.addEventListener('click', () => {
+            confirmDeleteProduct(btn.dataset.id, btn.dataset.name);
+        });
+    });
+});
+</script>

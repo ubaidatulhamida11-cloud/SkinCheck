@@ -1,0 +1,631 @@
+<div style="margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+    <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span style="font-size: 1.5rem;">💬</span>
+            <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text-main, #1e293b); margin: 0;">Autentikasi WhatsApp OTP</h1>
+            <span class="badge" style="background: rgba(37, 211, 102, 0.15); color: #128C7E; font-weight: 700; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;">WHATSAPP GATEWAY</span>
+        </div>
+        <p style="color: var(--text-muted, #64748b); margin: 0; font-size: 0.95rem;">Kelola provider gateway WhatsApp, parameter keamanan OTP (HMAC-SHA256), batas kedaluwarsa, dan rate limiting.</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn btn-outline-success" onclick="openWhatsAppTestModal()" style="padding: 9px 18px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+            <span>⚡</span> Uji Koneksi WhatsApp
+        </button>
+        <button type="button" class="btn btn-primary" onclick="saveWhatsAppConfig()" id="btn-save-wa" style="padding: 9px 20px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(108, 92, 231, 0.25);">
+            <span id="save-wa-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+            <span id="save-wa-btn-text">💾 Simpan Konfigurasi</span>
+        </button>
+    </div>
+</div>
+
+<!-- Alert Banner -->
+<div id="wa-alert" class="alert d-none mb-4 py-3 px-4 rounded-3" role="alert"></div>
+
+<!-- Architecture & Security Notice -->
+<div class="stat-card" style="margin-bottom: 24px; background: rgba(37, 211, 102, 0.05); border: 1px solid rgba(37, 211, 102, 0.25);">
+    <div style="display: flex; align-items: flex-start; gap: 14px;">
+        <span style="font-size: 1.6rem; line-height: 1;">🔒</span>
+        <div>
+            <strong style="color: #128C7E; font-size: 0.95rem; display: block; margin-bottom: 4px;">Standar Keamanan OTP SkinCheck:</strong>
+            <p style="margin: 0; font-size: 0.88rem; color: var(--text-main, #334155); line-height: 1.5;">
+                • WhatsApp merupakan <strong>satu-satunya channel OTP</strong> pada sistem SkinCheck.<br>
+                • Seluruh kode OTP di-hash menggunakan <strong>HMAC-SHA256</strong> dengan salt dinamis unik sebelum disimpan di database (plaintext OTP tidak pernah disimpan).<br>
+                • Verifikasi dilakukan menggunakan perbandingan constant-time (<code>crypto.timingSafeEqual</code>) untuk mencegah timing attack.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- LEFT COLUMN: PROVIDER SELECTION & SETTINGS -->
+    <div class="col-lg-7">
+        <div class="stat-card mb-4">
+            <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; color: var(--text-main, #1e293b);">
+                1. Provider Gateway WhatsApp
+            </h3>
+
+            <!-- Fonnte Gateway -->
+            <div class="p-3 mb-3 rounded-3" style="border: 2px solid <%= whatsapp.active_provider === 'fonnte' ? '#25D366' : '#e2e8f0' %>; background: <%= whatsapp.active_provider === 'fonnte' ? 'rgba(37, 211, 102, 0.03)' : '#ffffff' %>;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="wa_provider_radio" id="provider-fonnte" value="fonnte" <%= whatsapp.active_provider === 'fonnte' ? 'checked' : '' %>>
+                        <label class="form-check-label fw-bold" for="provider-fonnte" style="font-size: 1rem; color: var(--text-main, #1e293b);">
+                            Fonnte WhatsApp Gateway (Rekomendasi Aktif)
+                        </label>
+                    </div>
+                    <% if (whatsapp.active_provider === 'fonnte') { %>
+                        <span class="badge bg-success">AKTIF</span>
+                    <% } %>
+                </div>
+                <p class="text-muted small mb-3">
+                    Gateway WhatsApp multi-device tanpa biaya per pesan. Menggunakan nomor WhatsApp yang di-scan pada dashboard Fonnte.
+                </p>
+
+                <div class="mb-3">
+                    <label for="fonnte-token" class="form-label fw-semibold small">Fonnte API Token</label>
+                    <input type="text" id="fonnte-token" class="form-control" value="<%= whatsapp.providers.fonnte.token_masked || '' %>" placeholder="Kosongkan jika tidak ingin mengubah token tersimpan" style="font-family: monospace; font-size: 0.88rem; border-radius: 8px;">
+                    <small class="text-muted" style="font-size: 0.78rem;">Token rahasia perangkat dari dashboard Fonnte.</small>
+                </div>
+
+                <div class="mb-2">
+                    <label for="fonnte-url" class="form-label fw-semibold small">Fonnte API Base URL</label>
+                    <input type="text" id="fonnte-url" class="form-control form-control-sm" value="<%= whatsapp.providers.fonnte.api_base_url || 'https://api.fonnte.com/send' %>" style="border-radius: 6px;">
+                </div>
+            </div>
+
+            <!-- Meta Cloud API -->
+            <div class="p-3 mb-3 rounded-3" style="border: 2px solid <%= whatsapp.active_provider === 'meta' ? '#25D366' : '#e2e8f0' %>; background: <%= whatsapp.active_provider === 'meta' ? 'rgba(37, 211, 102, 0.03)' : '#ffffff' %>;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="wa_provider_radio" id="provider-meta" value="meta" <%= whatsapp.active_provider === 'meta' ? 'checked' : '' %>>
+                        <label class="form-check-label fw-bold" for="provider-meta" style="font-size: 1rem; color: var(--text-main, #1e293b);">
+                            Meta WhatsApp Cloud API (Official Enterprise)
+                        </label>
+                    </div>
+                    <% if (whatsapp.active_provider === 'meta') { %>
+                        <span class="badge bg-success">AKTIF</span>
+                    <% } %>
+                </div>
+                <p class="text-muted small mb-3">
+                    API resmi langsung dari Meta Cloud Platform dengan template pesan terverifikasi.
+                </p>
+
+                <div class="row g-2 mb-2">
+                    <div class="col-md-6">
+                        <label for="meta-phone-id" class="form-label fw-semibold small">Phone Number ID</label>
+                        <input type="text" id="meta-phone-id" class="form-control form-control-sm" value="<%= whatsapp.providers.meta.phone_number_id || '' %>" style="border-radius: 6px;">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="meta-business-id" class="form-label fw-semibold small">Business Account ID</label>
+                        <input type="text" id="meta-business-id" class="form-control form-control-sm" value="<%= whatsapp.providers.meta.business_account_id || '' %>" style="border-radius: 6px;">
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <label for="meta-token" class="form-label fw-semibold small">System User Access Token</label>
+                    <input type="text" id="meta-token" class="form-control form-control-sm" value="<%= whatsapp.providers.meta.access_token_masked || '' %>" placeholder="Kosongkan jika tidak ingin mengubah token" style="font-family: monospace; border-radius: 6px;">
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <label for="meta-template" class="form-label fw-semibold small">Template Name</label>
+                        <input type="text" id="meta-template" class="form-control form-control-sm" value="<%= whatsapp.providers.meta.template_name || 'skincheck_verification' %>" style="border-radius: 6px;">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="meta-lang" class="form-label fw-semibold small">Template Language</label>
+                        <input type="text" id="meta-lang" class="form-control form-control-sm" value="<%= whatsapp.providers.meta.template_lang || 'id' %>" style="border-radius: 6px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mock Provider -->
+            <div class="p-3 rounded-3" style="border: 2px solid <%= whatsapp.active_provider === 'mock' ? '#25D366' : '#e2e8f0' %>; background: <%= whatsapp.active_provider === 'mock' ? 'rgba(37, 211, 102, 0.03)' : '#ffffff' %>;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="wa_provider_radio" id="provider-mock" value="mock" <%= whatsapp.active_provider === 'mock' ? 'checked' : '' %>>
+                        <label class="form-check-label fw-bold" for="provider-mock" style="font-size: 1rem; color: var(--text-main, #1e293b);">
+                            Mock Provider (Simulasi Developer / Testing Offline)
+                        </label>
+                    </div>
+                    <% if (whatsapp.active_provider === 'mock') { %>
+                        <span class="badge bg-secondary">AKTIF</span>
+                    <% } %>
+                </div>
+                <p class="text-muted small mb-0">
+                    Mode pengembangan lokal. Kode OTP disimulasikan di backend tanpa mengirim pesan nyata ke WhatsApp pengguna.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: OTP SECURITY & RATE LIMITING -->
+    <div class="col-lg-5">
+        <div class="stat-card mb-4">
+            <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; color: var(--text-main, #1e293b);">
+                2. Pengaturan Parameter OTP
+            </h3>
+
+            <div class="mb-3">
+                <label for="otp-expiry" class="form-label fw-semibold small">Masa Berlaku Kode OTP (Detik)</label>
+                <div class="input-group">
+                    <input type="number" id="otp-expiry" class="form-control" value="<%= whatsapp.otp_settings.expiration_seconds || 300 %>" min="30" max="1800">
+                    <span class="input-group-text">Detik</span>
+                </div>
+                <small class="text-muted" style="font-size: 0.78rem;">Standar keamanan: 300 detik (5 menit).</small>
+            </div>
+
+            <div class="mb-3">
+                <label for="otp-cooldown" class="form-label fw-semibold small">Jeda Kirim Ulang / Resend Cooldown (Detik)</label>
+                <div class="input-group">
+                    <input type="number" id="otp-cooldown" class="form-control" value="<%= whatsapp.otp_settings.resend_cooldown_seconds || 60 %>" min="15" max="300">
+                    <span class="input-group-text">Detik</span>
+                </div>
+                <small class="text-muted" style="font-size: 0.78rem;">Waktu tunggu pengguna sebelum tombol 'Kirim Ulang' aktif kembali (default: 60s).</small>
+            </div>
+
+            <div class="mb-3">
+                <label for="otp-max-attempts" class="form-label fw-semibold small">Maksimum Percobaan Salah (Max Attempts)</label>
+                <input type="number" id="otp-max-attempts" class="form-control" value="<%= whatsapp.otp_settings.max_attempts || 5 %>" min="3" max="10">
+                <small class="text-muted" style="font-size: 0.78rem;">Jika batas tercapai, kode OTP akan hangus otomatis.</small>
+            </div>
+
+            <hr style="border-color: #e2e8f0; margin: 20px 0;">
+
+            <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; color: var(--text-main, #1e293b);">
+                🛡️ Proteksi Rate Limiting (Anti-Spam)
+            </h4>
+
+            <div class="mb-3">
+                <label for="otp-window-mins" class="form-label fw-semibold small">Jendela Waktu Rate Limit (Menit)</label>
+                <div class="input-group">
+                    <input type="number" id="otp-window-mins" class="form-control" value="<%= whatsapp.otp_settings.rate_limit_window_minutes || 15 %>" min="5" max="60">
+                    <span class="input-group-text">Menit</span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="otp-max-phone" class="form-label fw-semibold small">Maksimal Request per Nomor Telepon</label>
+                <input type="number" id="otp-max-phone" class="form-control" value="<%= whatsapp.otp_settings.rate_limit_max_per_phone || 5 %>" min="1" max="20">
+            </div>
+
+            <div class="mb-3">
+                <label for="otp-max-ip" class="form-label fw-semibold small">Maksimal Request per Alamat IP</label>
+                <input type="number" id="otp-max-ip" class="form-control" value="<%= whatsapp.otp_settings.rate_limit_max_per_ip || 10 %>" min="1" max="50">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3. PENGATURAN NOTIFIKASI AKTIVITAS LOGIN WHATSAPP -->
+<!-- ============================================================ -->
+<div class="stat-card mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <span style="font-size: 1.3rem;">🔔</span>
+            <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-main, #1e293b);">
+                3. Notifikasi Aktivitas Keamanan Login WhatsApp
+            </h3>
+        </div>
+        <div class="form-check form-switch fs-5 mb-0">
+            <% const loginNotif = whatsapp.login_notification || { enabled: true, max_retries: 2 }; %>
+            <input class="form-check-input" type="checkbox" role="switch" id="wa-login-notif-enabled" <%= loginNotif.enabled !== false ? 'checked' : '' %>>
+            <label class="form-check-label fs-6 fw-bold text-success" for="wa-login-notif-enabled">Aktifkan Notifikasi</label>
+        </div>
+    </div>
+    
+    <p class="text-muted small mb-3">
+        Setiap kali pengguna berhasil login ke akun SkinCheck, sistem secara otomatis mengirimkan notifikasi peringatan keamanan ke nomor WhatsApp terdaftar pengguna beserta rincian perangkat, browser, waktu, dan lokasi perkiraan.
+    </p>
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="mb-2 d-flex justify-content-between align-items-center">
+                <label for="wa-login-notif-template" class="form-label fw-semibold small mb-0">Template Pesan WhatsApp:</label>
+                <button type="button" class="btn btn-link btn-sm text-decoration-none p-0" onclick="resetLoginNotificationTemplate()" style="font-size: 0.78rem;">
+                    ↺ Pulihkan Template Standar
+                </button>
+            </div>
+            <textarea id="wa-login-notif-template" class="form-control" rows="8" style="font-family: monospace; font-size: 0.85rem; border-radius: 8px; line-height: 1.5;"><%= loginNotif.template || '' %></textarea>
+            
+            <div class="mt-2 d-flex flex-wrap gap-1 align-items-center">
+                <span class="small text-muted me-1" style="font-size: 0.75rem;">Variabel Dinamis:</span>
+                <span class="badge bg-light text-dark border pointer" onclick="insertVariableTag('{name}')" title="Nama Pengguna">{name}</span>
+                <span class="badge bg-light text-dark border pointer" onclick="insertVariableTag('{time}')" title="Tanggal & Jam Login">{time}</span>
+                <span class="badge bg-light text-dark border pointer" onclick="insertVariableTag('{device}')" title="Nama Perangkat/OS">{device}</span>
+                <span class="badge bg-light text-dark border pointer" onclick="insertVariableTag('{browser}')" title="Nama Browser">{browser}</span>
+                <span class="badge bg-light text-dark border pointer" onclick="insertVariableTag('{location}')" title="Perkiraan Lokasi/Jaringan">{location}</span>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="p-3 rounded-3 mb-3" style="background: var(--surface-light, #f8fafc); border: 1px solid #e2e8f0;">
+                <label for="wa-login-notif-max-retries" class="form-label fw-semibold small">Batas Maksimal Retry (Kirim Ulang)</label>
+                <div class="input-group input-group-sm mb-2">
+                    <input type="number" id="wa-login-notif-max-retries" class="form-control" value="<%= loginNotif.max_retries || 2 %>" min="1" max="5">
+                    <span class="input-group-text">Kali</span>
+                </div>
+                <small class="text-muted d-block" style="font-size: 0.75rem;">
+                    Batas maksimum percobaan kirim ulang jika notifikasi pertama gagal dikirim (mencegah spam ke gateway).
+                </small>
+            </div>
+
+            <div class="p-3 rounded-3" style="background: rgba(37, 211, 102, 0.05); border: 1px solid rgba(37, 211, 102, 0.2); font-size: 0.8rem;">
+                <div class="fw-bold mb-1" style="color: #128C7E;">Status Koneksi WhatsApp:</div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge <%= whatsapp.active_provider === 'mock' ? 'bg-secondary' : 'bg-success' %>">
+                        <%= whatsapp.active_provider ? whatsapp.active_provider.toUpperCase() : 'FONNTE' %>
+                    </span>
+                    <span class="text-muted" style="font-size: 0.75rem;">
+                        <%= whatsapp.active_provider === 'mock' ? 'Simulasi Offline' : 'Siap Kirim Pesan' %>
+                    </span>
+                </div>
+                <small class="text-muted">
+                    Kegagalan pengiriman WhatsApp <strong>tidak akan menghambat</strong> proses login pengguna.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4. RIWAYAT PENGIRIMAN NOTIFIKASI AKTIVITAS LOGIN -->
+<!-- ============================================================ -->
+<div class="stat-card mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-main, #1e293b);">
+                4. Riwayat Notifikasi Aktivitas Login Pengguna
+            </h3>
+            <p class="text-muted small mb-0 mt-1">
+                Catatan login terbaru dari seluruh pengguna dan status pengiriman notifikasi WhatsApp ke masing-masing akun.
+            </p>
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" onclick="location.reload()">
+            🔄 Segarkan Log
+        </button>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <% if (locals.loginHistory && loginHistory.length > 0) { %>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                    <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                        <tr>
+                            <th style="font-weight: 700; color: #475569;">Pengguna</th>
+                            <th style="font-weight: 700; color: #475569;">No. WhatsApp</th>
+                            <th style="font-weight: 700; color: #475569;">Waktu Login</th>
+                            <th style="font-weight: 700; color: #475569;">Perangkat & Browser</th>
+                            <th style="font-weight: 700; color: #475569;">IP & Lokasi</th>
+                            <th style="font-weight: 700; color: #475569; text-align: center;">Status Notifikasi</th>
+                            <th style="font-weight: 700; color: #475569; text-align: center; width: 110px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% loginHistory.forEach(item => { %>
+                            <% const wa = item.wa_notification || {}; %>
+                            <tr id="row-activity-<%= item.id %>" style="border-bottom: 1px solid #f1f5f9;">
+                                <td>
+                                    <div class="fw-bold text-dark"><%= item.user_name || 'Pengguna' %></div>
+                                    <div class="text-muted small"><%= item.user_email || '-' %></div>
+                                </td>
+                                <td>
+                                    <% if (item.phone_number) { %>
+                                        <span class="badge bg-light text-dark border font-monospace"><%= item.phone_number %></span>
+                                    <% } else { %>
+                                        <span class="text-muted fst-italic small">Belum ada</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark"><%= item.formatted_time || item.timestamp %></div>
+                                    <div class="text-muted small">Metode: <%= item.login_method || 'password' %></div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark"><%= item.device %></div>
+                                    <div class="text-muted small"><%= item.browser %></div>
+                                </td>
+                                <td>
+                                    <div class="font-monospace text-dark small"><%= item.ip_address %></div>
+                                    <div class="text-muted small"><%= item.location %></div>
+                                </td>
+                                <td style="text-align: center;">
+                                    <div id="status-badge-<%= item.id %>">
+                                        <% if (wa.status === 'sent') { %>
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
+                                                ● Terkirim
+                                            </span>
+                                            <% if (wa.retries > 0) { %>
+                                                <div class="small text-muted mt-1">(Retry <%= wa.retries %>x)</div>
+                                            <% } %>
+                                        <% } else if (wa.status === 'failed') { %>
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1" title="<%= wa.error || 'Gagal mengirim' %>">
+                                                ⚠️ Gagal
+                                            </span>
+                                            <% if (wa.retries > 0) { %>
+                                                <div class="small text-muted mt-1">(Retry <%= wa.retries %>x)</div>
+                                            <% } %>
+                                        <% } else if (wa.status === 'no_phone') { %>
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2 py-1">
+                                                Tanpa WhatsApp
+                                            </span>
+                                        <% } else if (wa.status === 'disabled') { %>
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2 py-1">
+                                                Dinonaktifkan
+                                            </span>
+                                        <% } else { %>
+                                            <span class="badge bg-secondary rounded-pill px-2 py-1"><%= wa.status %></span>
+                                        <% } %>
+                                    </div>
+                                </td>
+                                <td style="text-align: center;">
+                                    <% if (wa.status === 'failed' && item.phone_number) { %>
+                                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-2 py-1" style="font-size: 0.75rem;" id="btn-retry-<%= item.id %>" onclick="retryLoginNotification('<%= item.id %>')">
+                                            ↻ Kirim Ulang
+                                        </button>
+                                    <% } else { %>
+                                        <span class="text-muted small">-</span>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <div class="text-center py-4 text-muted">
+                <div style="font-size: 2rem; margin-bottom: 8px;">📋</div>
+                <p class="mb-0">Belum ada riwayat aktivitas login yang tercatat di sistem.</p>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL: UJI KONEKSI WHATSAPP -->
+<!-- ============================================================ -->
+<div id="waTestModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 520px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                <span>⚡</span> Uji Koneksi Gateway WhatsApp
+            </h3>
+            <button type="button" onclick="closeWhatsAppTestModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; line-height: 1;">&times;</button>
+        </div>
+        <div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; color: var(--text-main);">Pilih Gateway WhatsApp:</label>
+                <select id="modal-test-wa-provider" class="form-control" style="width: 100%; border-radius: 8px; padding: 9px 12px; font-size: 0.9rem;">
+                    <option value="fonnte" <%= whatsapp.active_provider === 'fonnte' ? 'selected' : '' %>>Fonnte WhatsApp Gateway</option>
+                    <option value="meta" <%= whatsapp.active_provider === 'meta' ? 'selected' : '' %>>Meta Cloud API</option>
+                    <option value="mock" <%= whatsapp.active_provider === 'mock' ? 'selected' : '' %>>Mock Provider</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label for="modal-test-phone" style="display: flex; justify-content: space-between; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; color: var(--text-main);">
+                    <span>Kirim Pesan Ping Uji Coba (Opsional):</span>
+                    <span class="text-muted fw-normal" style="font-size: 0.75rem;">Contoh: 08123456789</span>
+                </label>
+                <input type="tel" id="modal-test-phone" class="form-control" placeholder="Kosongkan jika hanya ingin cek status device" style="width: 100%; border-radius: 8px; padding: 9px 12px; font-size: 0.9rem;">
+                <small class="text-muted" style="font-size: 0.78rem; display: block; margin-top: 4px;">Jika diisi nomor HP lain, sistem akan mengirimkan 1 pesan notifikasi tes koneksi.</small>
+            </div>
+
+            <div id="wa-test-result-box" class="d-none" style="padding: 14px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 16px;">
+                <!-- Result via JS -->
+            </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+            <button type="button" class="btn btn-secondary" onclick="closeWhatsAppTestModal()" style="padding: 9px 18px; border-radius: 8px;">Tutup</button>
+            <button type="button" class="btn btn-success" id="btn-run-wa-test" onclick="executeWhatsAppTest()" style="padding: 9px 22px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px;">
+                <span id="test-wa-spinner" class="spinner-border spinner-border-sm me-2 d-none" style="width: 1rem; height: 1rem; border-width: 0.15em;" role="status"></span>
+                <span>Jalankan Pengujian</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showWaStatusAlert(msg, type = 'success') {
+    const alertBox = document.getElementById('wa-alert');
+    alertBox.className = `alert alert-${type} mb-4 py-3 px-4 rounded-3`;
+    alertBox.innerHTML = msg;
+    alertBox.classList.remove('d-none');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function saveWhatsAppConfig() {
+    const btn = document.getElementById('btn-save-wa');
+    const spinner = document.getElementById('save-wa-spinner');
+    const btnText = document.getElementById('save-wa-btn-text');
+
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    btnText.textContent = 'Menyimpan...';
+
+    const selectedProviderRadio = document.querySelector('input[name="wa_provider_radio"]:checked');
+    const activeProvider = selectedProviderRadio ? selectedProviderRadio.value : 'fonnte';
+
+    const payload = {
+        active_provider: activeProvider,
+        fonnte: {
+            token: document.getElementById('fonnte-token').value,
+            api_base_url: document.getElementById('fonnte-url').value
+        },
+        meta: {
+            phone_number_id: document.getElementById('meta-phone-id').value,
+            business_account_id: document.getElementById('meta-business-id').value,
+            access_token: document.getElementById('meta-token').value,
+            template_name: document.getElementById('meta-template').value,
+            template_lang: document.getElementById('meta-lang').value
+        },
+        otp_settings: {
+            expiration_seconds: document.getElementById('otp-expiry').value,
+            resend_cooldown_seconds: document.getElementById('otp-cooldown').value,
+            max_attempts: document.getElementById('otp-max-attempts').value,
+            rate_limit_window_minutes: document.getElementById('otp-window-mins').value,
+            rate_limit_max_per_phone: document.getElementById('otp-max-phone').value,
+            rate_limit_max_per_ip: document.getElementById('otp-max-ip').value
+        },
+        login_notification: {
+            enabled: document.getElementById('wa-login-notif-enabled') ? document.getElementById('wa-login-notif-enabled').checked : true,
+            template: document.getElementById('wa-login-notif-template') ? document.getElementById('wa-login-notif-template').value : '',
+            max_retries: document.getElementById('wa-login-notif-max-retries') ? document.getElementById('wa-login-notif-max-retries').value : 2
+        }
+    };
+
+    try {
+        const res = await fetch('/admin/config/whatsapp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showWaStatusAlert('<strong>Berhasil!</strong> ' + data.message, 'success');
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            showWaStatusAlert('<strong>Gagal:</strong> ' + data.message, 'danger');
+        }
+    } catch (err) {
+        showWaStatusAlert('<strong>Kesalahan:</strong> ' + err.message, 'danger');
+    } finally {
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+        btnText.textContent = '💾 Simpan Konfigurasi';
+    }
+}
+
+function insertVariableTag(tag) {
+    const textarea = document.getElementById('wa-login-notif-template');
+    if (!textarea) return;
+    const start = textarea.selectionStart || 0;
+    const end = textarea.selectionEnd || 0;
+    const text = textarea.value;
+    textarea.value = text.substring(0, start) + tag + text.substring(end);
+    textarea.focus();
+    textarea.selectionStart = textarea.selectionEnd = start + tag.length;
+}
+
+function resetLoginNotificationTemplate() {
+    const standard = `Notifikasi Keamanan SkinCheck\n\nHalo, {name}!\n\nKami mendeteksi aktivitas login baru pada akun SkinCheck Anda.\n\nDetail aktivitas:\n- Waktu login: {time}\n- Perangkat: {device}\n- Browser: {browser}\n- Lokasi perkiraan: {location}\n\nJika ini adalah aktivitas Anda, tidak diperlukan tindakan lebih lanjut.\n\nJika Anda tidak merasa melakukan login tersebut, segera buka aplikasi SkinCheck dan amankan akun Anda dengan mengganti kata sandi atau menghubungi administrator.\n\nTerima kasih telah menggunakan SkinCheck.\n\n*Pesan otomatis dari sistem keamanan SkinCheck. Mohon tidak membalas pesan ini.*`;
+    const textarea = document.getElementById('wa-login-notif-template');
+    if (textarea) textarea.value = standard;
+}
+
+async function retryLoginNotification(activityId) {
+    const btn = document.getElementById(`btn-retry-${activityId}`);
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Mengirim...`;
+    }
+
+    try {
+        const res = await fetch(`/admin/config/whatsapp/retry-login-notification/${activityId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showWaStatusAlert(`<strong>Berhasil!</strong> ${data.message}`, 'success');
+            const badgeBox = document.getElementById(`status-badge-${activityId}`);
+            if (badgeBox) {
+                badgeBox.innerHTML = `
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
+                        ● Terkirim (Retry)
+                    </span>
+                `;
+            }
+            if (btn) btn.remove();
+        } else {
+            showWaStatusAlert(`<strong>Gagal Kirim Ulang:</strong> ${data.message}`, 'danger');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '↻ Coba Lagi';
+            }
+        }
+    } catch (err) {
+        showWaStatusAlert(`<strong>Kesalahan Jaringan:</strong> ${err.message}`, 'danger');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '↻ Coba Lagi';
+        }
+    }
+}
+
+function openWhatsAppTestModal() {
+    const resultBox = document.getElementById('wa-test-result-box');
+    if (resultBox) resultBox.classList.add('d-none');
+    const modal = document.getElementById('waTestModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeWhatsAppTestModal() {
+    const modal = document.getElementById('waTestModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Close modal when clicking outside card
+window.addEventListener('click', (e) => {
+    const modal = document.getElementById('waTestModal');
+    if (e.target === modal) {
+        closeWhatsAppTestModal();
+    }
+});
+
+async function executeWhatsAppTest() {
+    const provider = document.getElementById('modal-test-wa-provider').value;
+    const testPhone = document.getElementById('modal-test-phone').value;
+    const resultBox = document.getElementById('wa-test-result-box');
+    const btn = document.getElementById('btn-run-wa-test');
+    const spinner = document.getElementById('test-wa-spinner');
+
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    resultBox.classList.add('d-none');
+
+    try {
+        const res = await fetch('/admin/config/whatsapp/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider, testPhone })
+        });
+        const data = await res.json();
+
+        resultBox.classList.remove('d-none');
+        if (data.success) {
+            resultBox.style.background = 'rgba(0, 184, 148, 0.12)';
+            resultBox.style.border = '1px solid #00b894';
+            resultBox.style.color = '#006241';
+            resultBox.innerHTML = `
+                <div class="fw-bold mb-1">✔ Gateway WhatsApp Terhubung!</div>
+                <div><strong>Provider:</strong> ${data.provider} | <strong>Latency:</strong> ${data.latencyMs} ms</div>
+                ${data.device ? `<div><strong>Nomor Device:</strong> ${data.device} (${data.deviceName || ''})</div>` : ''}
+                ${data.quota ? `<div><strong>Sisa Kuota:</strong> ${data.quota} pesan</div>` : ''}
+                ${data.testMessageSent ? `<div><strong>Pesan Tes Terkirim ke:</strong> ${data.testMessageSent.target} (ID: ${data.testMessageSent.messageId || 'OK'})</div>` : ''}
+                <div class="mt-1 small text-muted">${data.message || ''}</div>
+            `;
+        } else {
+            resultBox.style.background = 'rgba(214, 48, 49, 0.1)';
+            resultBox.style.border = '1px solid #d63031';
+            resultBox.style.color = '#d63031';
+            resultBox.innerHTML = `
+                <div class="fw-bold mb-1">✖ Koneksi Gagal / Perangkat Disconnected</div>
+                <div>${data.error || 'Gateway WhatsApp tidak merespons.'}</div>
+                ${data.device ? `<div>Device: ${data.device} (Status: ${data.deviceStatus})</div>` : ''}
+                ${data.latencyMs ? `<div>Waktu respons: ${data.latencyMs} ms</div>` : ''}
+            `;
+        }
+    } catch (err) {
+        resultBox.classList.remove('d-none');
+        resultBox.style.background = 'rgba(214, 48, 49, 0.1)';
+        resultBox.style.border = '1px solid #d63031';
+        resultBox.style.color = '#d63031';
+        resultBox.innerHTML = `<div class="fw-bold">Gagal menghubungi server: ${err.message}</div>`;
+    } finally {
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+    }
+}
+</script>

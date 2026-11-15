@@ -1,0 +1,528 @@
+<div style="max-width: 750px; margin: 20px auto;">
+    <div style="margin-bottom: 25px;">
+        <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">Pengaturan & Profil Akun</h1>
+        <p style="color: var(--text-muted); margin: 0; font-size: 0.95rem;">Kelola preferensi akun, tampilan tema gelap/terang, dan data pribadi Anda.</p>
+    </div>
+
+    <!-- User Info Card -->
+    <div class="glass-card mb-4" style="padding: 28px;">
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 18px; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+            <span>👤</span> Informasi Profil
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+            <div>
+                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Nama Lengkap</label>
+                <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-top: 4px;">
+                    <%= locals.user ? locals.user.name : 'Pengguna' %>
+                </div>
+            </div>
+            <div>
+                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Alamat Email</label>
+                <div style="font-size: 1.05rem; font-weight: 600; color: var(--text-main); margin-top: 4px;">
+                    <%= locals.user ? locals.user.email : '-' %>
+                </div>
+            </div>
+            <div>
+                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Peran Akun</label>
+                <div style="margin-top: 4px;">
+                    <% if (locals.user && locals.user.role === 'admin') { %>
+                        <span class="badge-role-admin">🛡️ Administrator</span>
+                    <% } else { %>
+                        <span class="badge-role-customer">👤 Customer</span>
+                    <% } %>
+                </div>
+            </div>
+            <div>
+                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Nomor WhatsApp</label>
+                <div style="font-size: 1.05rem; font-weight: 600; color: var(--text-main); margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                    <% if (locals.user && locals.user.phone_number) { %>
+                        <span><%= locals.user.phone_number %></span>
+                        <% if (locals.user.phone_verified) { %>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1" style="font-size: 0.75rem;">Terverifikasi ✅</span>
+                        <% } else { %>
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2 py-1" style="font-size: 0.75rem;">Belum Verifikasi ⚠️</span>
+                        <% } %>
+                    <% } else { %>
+                        <span style="color: var(--text-muted); font-style: italic;">Belum ditautkan</span>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WhatsApp OTP Linking Card -->
+    <div class="glass-card mb-4" style="padding: 28px;">
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+            <span style="color: #25D366;">💬</span> Keamanan & Login WhatsApp OTP
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 18px;">
+            Tautkan nomor WhatsApp Anda untuk memungkinkan login cepat dan aman menggunakan kode OTP 6-digit tanpa perlu kata sandi.
+        </p>
+
+        <!-- Status Message Alert -->
+        <div id="wa-profile-alert" class="alert d-none mb-3 py-2 px-3 small rounded-3" role="alert"></div>
+
+        <% if (locals.user && locals.user.phone_number && locals.user.phone_verified) { %>
+            <div class="p-3 mb-3 rounded-3" style="background: rgba(37, 211, 102, 0.08); border: 1px solid rgba(37, 211, 102, 0.25);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold" style="color: #128C7E;">WhatsApp Aktif & Terverifikasi</div>
+                        <div class="text-muted small mt-1">Anda dapat masuk ke aplikasi ini menggunakan nomor: <strong><%= locals.user.phone_number %></strong></div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" onclick="toggleWaChangeForm()">
+                        Ganti Nomor
+                    </button>
+                </div>
+            </div>
+        <% } %>
+
+        <div id="wa-link-form-container" style="<%= locals.user && locals.user.phone_number && locals.user.phone_verified ? 'display: none;' : '' %>">
+            <!-- Step 1: Input Phone -->
+            <div id="wa-profile-step-phone">
+                <div class="mb-3">
+                    <label for="wa-profile-phone" class="form-label fw-semibold" style="font-size: 0.9rem;">Nomor WhatsApp Baru</label>
+                    <div class="input-group" style="max-width: 400px;">
+                        <span class="input-group-text fw-bold" style="background: var(--surface-light); border-radius: 0.75rem 0 0 0.75rem;">🇮🇩 +62</span>
+                        <input type="tel" id="wa-profile-phone" class="form-control py-2" placeholder="812-3456-7890" style="border-radius: 0 0.75rem 0.75rem 0;">
+                    </div>
+                    <small class="text-muted">Contoh: 081234567890 atau 81234567890</small>
+                </div>
+
+                <button type="button" id="wa-profile-btn-send" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold" onclick="requestProfileWhatsAppOtp()">
+                    <span id="wa-profile-req-spinner" class="spinner-border spinner-border-sm me-2 d-none"></span>
+                    <span id="wa-profile-req-text">Kirim Kode Verifikasi WhatsApp</span>
+                </button>
+            </div>
+
+            <!-- Step 2: Input OTP -->
+            <div id="wa-profile-step-otp" style="display: none; max-width: 420px;">
+                <div class="p-3 mb-3 rounded-3" style="background: var(--surface-light); border: 1px solid var(--border-color);">
+                    <div class="small text-muted mb-1">Kode 6-digit telah dikirimkan ke:</div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong id="wa-profile-target-phone" class="fw-bold fs-6"></strong>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="cancelProfileWaVerification()">Batal / Ubah</button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="wa-profile-otp-code" class="form-label fw-semibold" style="font-size: 0.9rem;">Kode OTP WhatsApp</label>
+                    <input type="text" id="wa-profile-otp-code" class="form-control text-center fw-bold fs-4 py-2" maxlength="6" placeholder="••••••" inputmode="numeric" style="letter-spacing: 6px; border-radius: 0.75rem;">
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3 small">
+                    <span class="text-muted">⏳ Berlaku: <strong id="wa-profile-expiry">05:00</strong></span>
+                    <button type="button" id="wa-profile-btn-resend" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="resendProfileWhatsAppOtp()" disabled>
+                        Kirim Ulang (<span id="wa-profile-cooldown">60s</span>)
+                    </button>
+                </div>
+
+                <button type="button" id="wa-profile-btn-verify" class="btn btn-primary w-100 rounded-pill py-2 fw-semibold" onclick="verifyProfileWhatsAppOtp()">
+                    <span id="wa-profile-ver-spinner" class="spinner-border spinner-border-sm me-2 d-none"></span>
+                    <span id="wa-profile-ver-text">Verifikasi & Tautkan Nomor</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Setting Card -->
+    <div class="glass-card mb-4" style="padding: 28px;">
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+            <span>🎨</span> Pengaturan Tema Aplikasi
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+            Pilih mode tampilan gelap atau terang agar mata Anda tetap nyaman saat menggunakan aplikasi SkinCheck.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+            <!-- Light Option -->
+            <label id="card-theme-light" style="cursor: pointer; display: flex; flex-direction: column; gap: 10px; padding: 20px; border-radius: 14px; border: 2px solid var(--border-color); background: var(--surface); transition: all 0.2s ease;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 1.6rem;">☀️</span>
+                    <input type="radio" name="app_theme" id="theme-light-radio" value="light" style="width: 20px; height: 20px; accent-color: var(--primary);" onchange="window.setTheme('light')">
+                </div>
+                <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-main);">Mode Terang (Light)</div>
+                <div style="font-size: 0.82rem; color: var(--text-muted);">Tampilan cerah, bersih, dan kontras tinggi untuk siang hari.</div>
+            </label>
+
+            <!-- Dark Option -->
+            <label id="card-theme-dark" style="cursor: pointer; display: flex; flex-direction: column; gap: 10px; padding: 20px; border-radius: 14px; border: 2px solid var(--border-color); background: var(--surface); transition: all 0.2s ease;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 1.6rem;">🌙</span>
+                    <input type="radio" name="app_theme" id="theme-dark-radio" value="dark" style="width: 20px; height: 20px; accent-color: var(--primary);" onchange="window.setTheme('dark')">
+                </div>
+                <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-main);">Mode Gelap (Dark)</div>
+                <div style="font-size: 0.82rem; color: var(--text-muted);">Tampilan elegan, redup, dan ramah untuk mata di malam hari.</div>
+            </label>
+        </div>
+    </div>
+
+    <!-- Riwayat Aktivitas Login & Keamanan Card -->
+    <div class="glass-card mb-4" style="padding: 28px;">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+                <h3 style="font-size: 1.2rem; font-weight: 700; margin: 0; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                    <span>🛡️</span> Riwayat Aktivitas Login & Keamanan
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.88rem; margin: 4px 0 0 0;">
+                    Daftar aktivitas login akun Anda. Notifikasi otomatis dikirimkan ke WhatsApp setiap kali ada sesi login baru.
+                </p>
+            </div>
+            <span class="badge" style="background: rgba(108, 92, 231, 0.1); color: #6C5CE7; font-size: 0.78rem; font-weight: 700; padding: 6px 12px; border-radius: 20px;">
+                Keamanan Akun
+            </span>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <% if (locals.loginHistory && loginHistory.length > 0) { %>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" style="font-size: 0.88rem;">
+                        <thead style="background: var(--surface-light, rgba(0,0,0,0.02)); border-bottom: 2px solid var(--border-color, #e2e8f0);">
+                            <tr>
+                                <th style="color: var(--text-muted); font-weight: 700; padding: 10px 14px;">Waktu Login</th>
+                                <th style="color: var(--text-muted); font-weight: 700; padding: 10px 14px;">Perangkat & Browser</th>
+                                <th style="color: var(--text-muted); font-weight: 700; padding: 10px 14px;">IP & Lokasi</th>
+                                <th style="color: var(--text-muted); font-weight: 700; padding: 10px 14px; text-align: right;">Status Notifikasi WhatsApp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% loginHistory.forEach(item => { %>
+                                <tr style="border-bottom: 1px solid var(--border-color, #f1f5f9);">
+                                    <td style="padding: 12px 14px;">
+                                        <div style="font-weight: 700; color: var(--text-main);"><%= item.formatted_time || item.timestamp %></div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                                            Metode: <%= item.login_method === 'whatsapp_otp' ? 'WhatsApp OTP' : 'Kata Sandi' %>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 12px 14px;">
+                                        <div style="font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                                            <span>💻</span> <%= item.device || 'Perangkat' %>
+                                        </div>
+                                        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                                            <%= item.browser || 'Browser' %>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 12px 14px;">
+                                        <div style="font-family: monospace; font-size: 0.82rem; color: var(--text-main);">
+                                            <%= item.ip_address || '127.0.0.1' %>
+                                        </div>
+                                        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                                            📍 <%= item.location || 'Lokal' %>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 12px 14px; text-align: right;">
+                                        <% const wa = item.wa_notification || {}; %>
+                                        <% if (wa.status === 'sent') { %>
+                                            <span class="badge rounded-pill px-3 py-1" style="background: rgba(0, 184, 148, 0.15); color: #00b894; font-weight: 700; font-size: 0.78rem; border: 1px solid rgba(0, 184, 148, 0.3);">
+                                                ● Terkirim ke WhatsApp
+                                            </span>
+                                            <% if (item.phone_number) { %>
+                                                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;"><%= item.phone_number %></div>
+                                            <% } %>
+                                        <% } else if (wa.status === 'failed') { %>
+                                            <span class="badge rounded-pill px-3 py-1" style="background: rgba(214, 48, 49, 0.12); color: #d63031; font-weight: 700; font-size: 0.78rem; border: 1px solid rgba(214, 48, 49, 0.3);" title="<%= wa.error || 'Gagal mengirim' %>">
+                                                ⚠️ Gagal Dikirim
+                                            </span>
+                                        <% } else if (wa.status === 'no_phone') { %>
+                                            <span class="badge rounded-pill px-3 py-1" style="background: rgba(243, 156, 18, 0.12); color: #f39c12; font-weight: 700; font-size: 0.78rem; border: 1px solid rgba(243, 156, 18, 0.3);">
+                                                Belum Taut WhatsApp
+                                            </span>
+                                        <% } else if (wa.status === 'disabled') { %>
+                                            <span class="badge rounded-pill px-3 py-1" style="background: rgba(148, 163, 184, 0.15); color: #64748b; font-weight: 700; font-size: 0.78rem;">
+                                                Dinonaktifkan
+                                            </span>
+                                        <% } else { %>
+                                            <span class="badge rounded-pill px-3 py-1" style="background: rgba(148, 163, 184, 0.15); color: #64748b; font-weight: 700; font-size: 0.78rem;">
+                                                <%= wa.status || 'Pending' %>
+                                            </span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="text-center py-4" style="color: var(--text-muted);">
+                    <div style="font-size: 2rem; margin-bottom: 8px;">📋</div>
+                    <p class="mb-0">Belum ada riwayat aktivitas login yang tercatat.</p>
+                </div>
+            <% } %>
+        </div>
+
+        <div class="p-3 mt-3 rounded-3" style="background: rgba(108, 92, 231, 0.05); border: 1px dashed rgba(108, 92, 231, 0.25); font-size: 0.82rem; color: var(--text-muted);">
+            💡 <strong>Tips Keamanan:</strong> Jika Anda melihat aktivitas login yang mencurigakan atau bukan dilakukan oleh Anda, segera ubah kata sandi akun Anda dan pastikan nomor WhatsApp Anda aktif untuk menerima notifikasi real-time.
+        </div>
+    </div>
+
+    <!-- Danger Zone Card -->
+    <div class="glass-card" style="padding: 28px; border-left: 4px solid var(--error);">
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--error); margin-bottom: 8px;">
+            ⚠️ Zona Berbahaya
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px; line-height: 1.5;">
+            Menghapus akun Anda bersifat permanen. Semua data scan wajah dan foto Anda akan dihapus sepenuhnya dari sistem kami demi menjaga privasi Anda.
+        </p>
+        <button class="btn btn-secondary" style="color: var(--error); border-color: rgba(214, 48, 49, 0.4); font-weight: 600;" onclick="confirmDeleteAccount()">
+            Hapus Akun Permanen
+        </button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const lightRadio = document.getElementById('theme-light-radio');
+    const darkRadio = document.getElementById('theme-dark-radio');
+    if (currentTheme === 'dark') {
+        if (darkRadio) darkRadio.checked = true;
+    } else {
+        if (lightRadio) lightRadio.checked = true;
+    }
+});
+
+async function confirmDeleteAccount() {
+    let confirmed = false;
+    if (window.showCenteredConfirm) {
+        confirmed = await window.showCenteredConfirm({
+            title: 'Hapus Akun Permanen',
+            desc: 'PERINGATAN: Apakah Anda yakin ingin menghapus akun Anda secara permanen? Semua foto scan dan riwayat akan dihapus.',
+            confirmText: 'Ya, Hapus Akun',
+            cancelText: 'Batal'
+        });
+    } else {
+        confirmed = confirm("PERINGATAN: Apakah Anda yakin ingin menghapus akun Anda secara permanen? Semua foto scan akan dihapus dan tidak dapat dikembalikan.");
+    }
+    if (confirmed) {
+        try {
+            const res = await fetch('/app/api/profile', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("Akun berhasil dihapus.");
+                window.location.href = '/';
+            } else {
+                alert("Gagal menghapus akun: " + data.message);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Terjadi kesalahan jaringan.");
+        }
+    }
+}
+
+// WhatsApp OTP Profile Integration
+let profileChallengeId = null;
+let profileTargetPhone = '';
+let profileCooldownTimer = null;
+let profileExpiryTimer = null;
+let profileCooldownRemaining = 0;
+let profileExpiryRemaining = 300;
+
+function toggleWaChangeForm() {
+    const container = document.getElementById('wa-link-form-container');
+    container.style.display = container.style.display === 'none' ? 'block' : 'none';
+    hideProfileWaAlert();
+}
+
+function showProfileWaAlert(msg, type = 'danger') {
+    const box = document.getElementById('wa-profile-alert');
+    box.className = `alert alert-${type} mb-3 py-2 px-3 small rounded-3`;
+    box.textContent = msg;
+    box.classList.remove('d-none');
+}
+
+function hideProfileWaAlert() {
+    const box = document.getElementById('wa-profile-alert');
+    box.classList.add('d-none');
+}
+
+function cancelProfileWaVerification() {
+    clearInterval(profileCooldownTimer);
+    clearInterval(profileExpiryTimer);
+    document.getElementById('wa-profile-step-phone').style.display = 'block';
+    document.getElementById('wa-profile-step-otp').style.display = 'none';
+    hideProfileWaAlert();
+}
+
+async function requestProfileWhatsAppOtp() {
+    const phoneInput = document.getElementById('wa-profile-phone');
+    const rawPhone = phoneInput.value.trim();
+
+    if (!rawPhone) {
+        showProfileWaAlert('Silakan masukkan nomor telepon WhatsApp Anda.');
+        phoneInput.focus();
+        return;
+    }
+
+    hideProfileWaAlert();
+    const btn = document.getElementById('wa-profile-btn-send');
+    const spinner = document.getElementById('wa-profile-req-spinner');
+    const txt = document.getElementById('wa-profile-req-text');
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    txt.textContent = 'Memproses...';
+
+    try {
+        const res = await fetch('/api/auth/whatsapp/request-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: rawPhone, purpose: 'phone_link' })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            profileChallengeId = data.challengeId;
+            profileTargetPhone = rawPhone;
+
+            document.getElementById('wa-profile-target-phone').textContent = data.maskedPhone || rawPhone;
+            document.getElementById('wa-profile-step-phone').style.display = 'none';
+            document.getElementById('wa-profile-step-otp').style.display = 'block';
+
+            startProfileCooldownTimer(data.resendCooldownSeconds || 60);
+            startProfileExpiryTimer(data.expiresInSeconds || 300);
+
+            showProfileWaAlert(data.message, 'success');
+            document.getElementById('wa-profile-otp-code').focus();
+        } else {
+            showProfileWaAlert(data.message || 'Gagal mengirim OTP.');
+        }
+    } catch (err) {
+        console.error(err);
+        showProfileWaAlert('Terjadi gangguan jaringan.');
+    } finally {
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+        txt.textContent = 'Kirim Kode Verifikasi WhatsApp';
+    }
+}
+
+async function resendProfileWhatsAppOtp() {
+    if (profileCooldownRemaining > 0) return;
+    hideProfileWaAlert();
+
+    const btn = document.getElementById('wa-profile-btn-resend');
+    btn.disabled = true;
+    btn.textContent = 'Mengirim...';
+
+    try {
+        const res = await fetch('/api/auth/whatsapp/resend-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                challengeId: profileChallengeId,
+                phone: profileTargetPhone,
+                purpose: 'phone_link'
+            })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            profileChallengeId = data.challengeId;
+            showProfileWaAlert('Kode baru telah dikirimkan via WhatsApp.', 'success');
+            startProfileCooldownTimer(data.resendCooldownSeconds || 60);
+            startProfileExpiryTimer(data.expiresInSeconds || 300);
+            document.getElementById('wa-profile-otp-code').value = '';
+        } else {
+            showProfileWaAlert(data.message || 'Gagal mengirim ulang OTP.');
+            btn.disabled = false;
+            btn.textContent = 'Kirim Ulang';
+        }
+    } catch (err) {
+        console.error(err);
+        showProfileWaAlert('Terjadi gangguan jaringan.');
+        btn.disabled = false;
+        btn.textContent = 'Kirim Ulang';
+    }
+}
+
+async function verifyProfileWhatsAppOtp() {
+    const code = document.getElementById('wa-profile-otp-code').value.trim();
+
+    if (code.length !== 6) {
+        showProfileWaAlert('Masukkan 6 digit kode verifikasi WhatsApp.');
+        return;
+    }
+
+    hideProfileWaAlert();
+    const btn = document.getElementById('wa-profile-btn-verify');
+    const spinner = document.getElementById('wa-profile-ver-spinner');
+    const txt = document.getElementById('wa-profile-ver-text');
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    txt.textContent = 'Memverifikasi...';
+
+    try {
+        const res = await fetch('/api/auth/whatsapp/verify-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                challengeId: profileChallengeId,
+                otp: code,
+                purpose: 'phone_link',
+                phone: profileTargetPhone
+            })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showProfileWaAlert('Nomor WhatsApp berhasil diverifikasi dan ditautkan!', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showProfileWaAlert(data.message || 'Kode verifikasi salah.');
+        }
+    } catch (err) {
+        console.error(err);
+        showProfileWaAlert('Terjadi gangguan jaringan.');
+    } finally {
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+        txt.textContent = 'Verifikasi & Tautkan Nomor';
+    }
+}
+
+function startProfileCooldownTimer(seconds) {
+    clearInterval(profileCooldownTimer);
+    profileCooldownRemaining = seconds;
+    const btn = document.getElementById('wa-profile-btn-resend');
+    btn.disabled = true;
+
+    profileCooldownTimer = setInterval(() => {
+        profileCooldownRemaining--;
+        if (profileCooldownRemaining <= 0) {
+            clearInterval(profileCooldownTimer);
+            btn.disabled = false;
+            btn.textContent = 'Kirim Ulang';
+        } else {
+            btn.innerHTML = `Kirim Ulang (<span id="wa-profile-cooldown">${profileCooldownRemaining}s</span>)`;
+        }
+    }, 1000);
+}
+
+function startProfileExpiryTimer(seconds) {
+    clearInterval(profileExpiryTimer);
+    profileExpiryRemaining = seconds;
+    const expiryDisplay = document.getElementById('wa-profile-expiry');
+
+    function update() {
+        const m = Math.floor(profileExpiryRemaining / 60).toString().padStart(2, '0');
+        const s = (profileExpiryRemaining % 60).toString().padStart(2, '0');
+        expiryDisplay.textContent = `${m}:${s}`;
+    }
+
+    update();
+    profileExpiryTimer = setInterval(() => {
+        profileExpiryRemaining--;
+        if (profileExpiryRemaining <= 0) {
+            clearInterval(profileExpiryTimer);
+            expiryDisplay.textContent = 'Kedaluwarsa';
+            showProfileWaAlert('Kode verifikasi telah kedaluwarsa. Silakan kirim ulang.', 'danger');
+        } else {
+            update();
+        }
+    }, 1000);
+}
+</script>

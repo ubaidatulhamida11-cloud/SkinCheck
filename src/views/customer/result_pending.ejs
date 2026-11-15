@@ -1,0 +1,18 @@
+<div class="container py-5 text-center min-vh-100 d-flex flex-column justify-content-center align-items-center">
+    <div class="card shadow-sm border-0 p-5" style="max-width: 450px;">
+        <div class="spinner-border text-primary mb-4" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h3 class="fw-bold mb-3">Menganalisis Kulit...</h3>
+        <p class="text-muted">
+            Sistem kami sedang mengestimasi indikator visual dari foto wajah Anda. Halaman ini akan termuat secara otomatis saat proses selesai.
+        </p>
+    </div>
+</div>
+
+<script>
+    // Simple polling to check when analysis is done
+    setInterval(() => {
+        window.location.reload();
+    }, 2000);
+</script>

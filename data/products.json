@@ -1,0 +1,102 @@
+[
+  {
+    "id": "prod_1",
+    "brand": "SkinCheck Basics",
+    "name": "Gentle Hydrating Cleanser",
+    "category": "Cleanser",
+    "description": "Pembersih wajah bertekstur gel yang lembut, diformulasikan untuk membersihkan kotoran tanpa merusak skin barrier.",
+    "ingredients": [
+      "Glycerin",
+      "Ceramide",
+      "Hyaluronic Acid"
+    ],
+    "skin_concern": [
+      "kering",
+      "sensitif",
+      "kemerahan"
+    ],
+    "usage_guidance": "Gunakan pada pagi dan malam hari. Pijat lembut pada wajah basah, lalu bilas hingga bersih.",
+    "status": "active",
+    "created_at": "2026-09-01T00:00:00.000Z",
+    "updated_at": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "prod_2",
+    "brand": "SkinCheck Actives",
+    "name": "Niacinamide 10% Blemish Serum",
+    "category": "Serum",
+    "description": "Serum kosmetik untuk membantu menyamarkan tampilan noda bekas jerawat dan mencerahkan kulit secara visual.",
+    "ingredients": [
+      "Niacinamide 10%",
+      "Zinc PCA",
+      "Allantoin"
+    ],
+    "skin_concern": [
+      "jerawat",
+      "hiperpigmentasi",
+      "berminyak"
+    ],
+    "usage_guidance": "Gunakan 2-3 tetes pada wajah yang bersih sebelum pelembap.",
+    "status": "active",
+    "created_at": "2026-09-01T00:00:00.000Z",
+    "updated_at": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "prod_3",
+    "brand": "SkinCheck Basics",
+    "name": "Barrier Repair Moisturizer",
+    "category": "Moisturizer",
+    "description": "Pelembap harian dengan tekstur krim ringan yang membantu mengunci kelembapan kulit.",
+    "ingredients": [
+      "Ceramide NP",
+      "Panthenol",
+      "Squalane"
+    ],
+    "skin_concern": [
+      "kering",
+      "kemerahan",
+      "tekstur kasar"
+    ],
+    "usage_guidance": "Aplikasikan secara merata pada wajah dan leher setelah menggunakan serum.",
+    "status": "active",
+    "created_at": "2026-09-01T00:00:00.000Z",
+    "updated_at": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "prod_4",
+    "brand": "SkinCheck Protect",
+    "name": "Daily Sun Shield SPF 50",
+    "category": "Sunscreen",
+    "description": "Tabir surya kosmetik sehari-hari yang ringan dan tidak lengket. Membantu melindungi kulit dari paparan sinar UV.",
+    "ingredients": [
+      "Zinc Oxide",
+      "Titanium Dioxide",
+      "Aloe Vera Extract"
+    ],
+    "skin_concern": [
+      "semua jenis kulit",
+      "hiperpigmentasi"
+    ],
+    "usage_guidance": "Gunakan sebanyak 2 ruas jari sebagai langkah terakhir rutinitas pagi Anda. Aplikasikan ulang setiap 2-3 jam jika banyak beraktivitas di luar.",
+    "status": "active",
+    "created_at": "2026-09-01T00:00:00.000Z",
+    "updated_at": "2026-09-01T00:00:00.000Z"
+  },
+  {
+    "id": "prod_5",
+    "brand": "Medical Pharma",
+    "name": "Prescription Acne Treatment",
+    "category": "Treatment",
+    "description": "Obat keras untuk jerawat parah.",
+    "ingredients": [
+      "Isotretinoin"
+    ],
+    "skin_concern": [
+      "jerawat kistik"
+    ],
+    "usage_guidance": "Harus dengan resep dokter.",
+    "status": "inactive",
+    "created_at": "2026-09-01T00:00:00.000Z",
+    "updated_at": "2026-09-01T00:00:00.000Z"
+  }
+]

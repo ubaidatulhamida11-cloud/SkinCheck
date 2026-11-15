@@ -1,0 +1,131 @@
+<%- include('../partials/header') %>
+
+<main class="container d-flex justify-content-center align-items-center min-vh-100 py-5">
+    <div class="card shadow border-0 p-4" style="max-width: 520px; width: 100%; border-radius: 1.25rem; background: var(--surface); color: var(--text-main);">
+        <h2 class="text-center fw-bold mb-1" style="color: var(--text-main);">Daftar Akun SkinCheck</h2>
+        <p class="text-center text-muted mb-4" style="font-size: 0.95rem;">Mulai perjalanan pemantauan kesehatan kulit Anda</p>
+        
+        <% if (locals.error) { %>
+            <div class="alert alert-danger py-2 px-3 small rounded-3" role="alert">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <form action="/auth/register" method="POST">
+            <div class="mb-3">
+                <label for="name" class="form-label fw-semibold" style="font-size: 0.9rem;">Nama Lengkap</label>
+                <input type="text" id="name" name="name" class="form-control py-2" required placeholder="Jane Doe" value="<%= locals.formData ? locals.formData.name || '' : '' %>" style="border-radius: 0.75rem;">
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label fw-semibold" style="font-size: 0.9rem;">Alamat Email</label>
+                <input type="email" id="email" name="email" class="form-control py-2" required placeholder="you@example.com" value="<%= locals.formData ? locals.formData.email || '' : '' %>" style="border-radius: 0.75rem;">
+            </div>
+
+            <div class="mb-3">
+                <label for="phoneNumber" class="form-label fw-semibold d-flex justify-content-between align-items-center" style="font-size: 0.9rem;">
+                    <span>Nomor WhatsApp <span class="text-danger">*</span></span>
+                    <span class="text-muted small" style="font-size: 0.78rem;">(Verifikasi OTP Wajib)</span>
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text fw-bold" style="background: var(--surface-light); border-radius: 0.75rem 0 0 0.75rem;">🇮🇩 +62</span>
+                    <input type="tel" id="phoneNumber" name="phoneNumber" class="form-control py-2" required placeholder="812-3456-7890" value="<%= locals.formData ? locals.formData.phoneNumber || '' : '' %>" style="border-radius: 0 0.75rem 0.75rem 0;">
+                </div>
+                <small class="text-muted" style="font-size: 0.8rem;">Kode OTP 6-digit akan dikirimkan ke nomor ini untuk memverifikasi akun Anda.</small>
+            </div>
+            
+            <div class="mb-3">
+                <label for="password" class="form-label fw-semibold" style="font-size: 0.9rem;">Kata Sandi</label>
+                <div class="input-group">
+                    <input type="password" id="password" name="password" class="form-control py-2" required placeholder="••••••••" minlength="6" style="border-radius: 0.75rem 0 0 0.75rem;">
+                    <button type="button" class="btn btn-outline-secondary d-flex align-items-center justify-content-center px-3 toggle-password-btn" data-target="password" style="border-radius: 0 0.75rem 0.75rem 0; border-color: var(--border-color); color: var(--text-muted); background: var(--surface);" title="Lihat Kata Sandi" aria-label="Lihat kata sandi">
+                        <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <svg class="eye-off-icon d-none" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                    </button>
+                </div>
+                <small class="text-muted" style="font-size: 0.8rem;">Minimal 6 karakter</small>
+            </div>
+
+            <div class="mb-3">
+                <label for="confirmPassword" class="form-label fw-semibold" style="font-size: 0.9rem;">Konfirmasi Kata Sandi</label>
+                <div class="input-group">
+                    <input type="password" id="confirmPassword" name="confirmPassword" class="form-control py-2" required placeholder="••••••••" minlength="6" style="border-radius: 0.75rem 0 0 0.75rem;">
+                    <button type="button" class="btn btn-outline-secondary d-flex align-items-center justify-content-center px-3 toggle-password-btn" data-target="confirmPassword" style="border-radius: 0 0.75rem 0.75rem 0; border-color: var(--border-color); color: var(--text-muted); background: var(--surface);" title="Lihat Kata Sandi" aria-label="Lihat konfirmasi kata sandi">
+                        <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <svg class="eye-off-icon d-none" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="form-check mt-4 mb-2">
+                <input type="checkbox" id="privacyConsent" name="privacyConsent" class="form-check-input" required>
+                <label for="privacyConsent" class="form-check-label text-muted small">Saya menyetujui <a href="#">Kebijakan Privasi</a> dan <a href="#">Syarat & Ketentuan</a> SkinCheck.</label>
+            </div>
+
+            <div class="form-check mb-4">
+                <input type="checkbox" id="dataConsent" name="dataConsent" class="form-check-input" required>
+                <label for="dataConsent" class="form-check-label text-muted small">Saya mengizinkan pemrosesan data analisis kulit saya untuk keperluan pemantauan dan rekomendasi produk.</label>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill fw-semibold shadow-sm">
+                Lanjut ke Verifikasi OTP ➡️
+            </button>
+        </form>
+        
+        <p class="text-center mt-4 mb-0" style="font-size: 0.95rem;">
+            Sudah memiliki akun? <a href="/auth/login" style="font-weight: 600;">Masuk di sini</a>
+        </p>
+    </div>
+</main>
+
+<style>
+.toggle-password-btn:hover {
+    color: var(--primary) !important;
+    background: rgba(108, 92, 231, 0.08) !important;
+}
+.toggle-password-btn:focus {
+    box-shadow: none;
+    border-color: var(--primary);
+}
+</style>
+
+<script>
+document.querySelectorAll('.toggle-password-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const targetId = this.getAttribute('data-target');
+        const input = document.getElementById(targetId);
+        if (!input) return;
+
+        const eyeIcon = this.querySelector('.eye-icon');
+        const eyeOffIcon = this.querySelector('.eye-off-icon');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            eyeIcon.classList.add('d-none');
+            eyeOffIcon.classList.remove('d-none');
+            this.setAttribute('title', 'Sembunyikan Kata Sandi');
+            this.setAttribute('aria-label', 'Sembunyikan kata sandi');
+        } else {
+            input.type = 'password';
+            eyeIcon.classList.remove('d-none');
+            eyeOffIcon.classList.add('d-none');
+            this.setAttribute('title', 'Lihat Kata Sandi');
+            this.setAttribute('aria-label', 'Lihat kata sandi');
+        }
+    });
+});
+</script>
+
+<%- include('../partials/footer') %>

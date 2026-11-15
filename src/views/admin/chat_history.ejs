@@ -1,0 +1,452 @@
+<div style="margin-bottom: 25px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+            <h1 style="font-size: 1.8rem; font-weight: 800; color: #1e293b; margin-bottom: 6px; display: flex; align-items: center; gap: 10px;">
+                <span>💬</span> Riwayat Chatbot Customer
+            </h1>
+            <p style="color: #64748b; margin: 0; font-size: 0.95rem;">Pantau seluruh riwayat interaksi, konsultasi skincare, dan pertanyaan customer kepada SkinCheck AI.</p>
+        </div>
+        <div>
+            <a href="/admin/dashboard" class="btn btn-secondary btn-sm" style="padding: 8px 16px; font-weight: 600; border-radius: 8px;">
+                &larr; Kembali ke Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Overview Metric Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px;">
+    <div class="stat-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Sesi Chat</span>
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(108, 92, 231, 0.1); color: #6C5CE7; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">💬</div>
+        </div>
+        <div style="font-size: 2rem; font-weight: 800; color: #1e293b; line-height: 1;"><%= locals.chatHistoryList ? chatHistoryList.length : 0 %></div>
+        <div style="font-size: 0.82rem; color: #00b894; margin-top: 8px; font-weight: 600;">Percakapan customer tercatat</div>
+    </div>
+
+    <div class="stat-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Pesan Ditanyakan</span>
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(0, 206, 201, 0.1); color: #00cec9; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">❓</div>
+        </div>
+        <% 
+            let totalCustomerQuestions = 0;
+            if (locals.chatHistoryList) {
+                chatHistoryList.forEach(c => totalCustomerQuestions += (c.userMessagesCount || 0));
+            }
+        %>
+        <div style="font-size: 2rem; font-weight: 800; color: #1e293b; line-height: 1;"><%= totalCustomerQuestions %></div>
+        <div style="font-size: 0.82rem; color: #64748b; margin-top: 8px;">Pertanyaan masuk dari pengguna</div>
+    </div>
+
+    <div class="stat-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Pertukaran Pesan</span>
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(253, 121, 168, 0.1); color: #fd79a8; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🔄</div>
+        </div>
+        <div style="font-size: 2rem; font-weight: 800; color: #1e293b; line-height: 1;"><%= locals.totalMessages ? totalMessages : 0 %></div>
+        <div style="font-size: 0.82rem; color: #64748b; margin-top: 8px;">Pesan masuk dan respon AI</div>
+    </div>
+
+    <div class="stat-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Aktivitas Terakhir</span>
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(225, 112, 85, 0.1); color: #e17055; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🕒</div>
+        </div>
+        <% 
+            let latestTimeStr = 'Belum ada';
+            if (locals.chatHistoryList && chatHistoryList.length > 0 && chatHistoryList[0].updatedAt) {
+                const d = new Date(chatHistoryList[0].updatedAt);
+                if (!isNaN(d.getTime())) {
+                    latestTimeStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + ', ' + 
+                        String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ' WIB';
+                }
+            }
+        %>
+        <div style="font-size: 1.25rem; font-weight: 800; color: #1e293b; line-height: 1.2;"><%= latestTimeStr %></div>
+        <div style="font-size: 0.82rem; color: #64748b; margin-top: 8px;">Interaksi customer paling baru</div>
+    </div>
+</div>
+
+<!-- Main Chat History Section -->
+<div style="background: #ffffff; border-radius: 14px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+    <!-- Filter Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+        <div style="flex: 1; min-width: 260px; max-width: 420px; position: relative;">
+            <input type="text" id="chatSearchInput" onkeyup="filterChatTable()" placeholder="Cari nama customer, email, atau isi chat..." class="form-control" style="border-radius: 20px; padding-left: 38px; font-size: 0.88rem;">
+            <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.9rem;">🔍</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <label style="font-size: 0.85rem; color: #64748b; font-weight: 600;">Saluran:</label>
+            <select id="chatChannelFilter" onchange="filterChatTable()" class="form-select form-select-sm" style="border-radius: 10px; width: 160px; font-size: 0.85rem;">
+                <option value="all">Semua Saluran</option>
+                <option value="widget">Widget Popup</option>
+                <option value="assistant">Halaman Asisten</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Table of Customer Chat Interactions -->
+    <div style="overflow-x: auto;">
+        <table class="data-table" id="chatHistoryTable">
+            <thead>
+                <tr>
+                    <th style="min-width: 180px;">Customer</th>
+                    <th style="min-width: 110px;">Saluran</th>
+                    <th style="min-width: 220px;">Pertanyaan Terakhir</th>
+                    <th style="min-width: 260px;">Jawaban AI Terakhir</th>
+                    <th style="min-width: 140px;">Waktu Terakhir</th>
+                    <th style="text-align: center; width: 90px;">Total Pesan</th>
+                    <th style="text-align: center; min-width: 140px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (locals.chatHistoryList && chatHistoryList.length > 0) { %>
+                    <% chatHistoryList.forEach((chat, index) => { %>
+                        <% 
+                            const d = new Date(chat.updatedAt);
+                            let formattedDateStr = '-';
+                            if (!isNaN(d.getTime())) {
+                                formattedDateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' +
+                                    String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+                            }
+                            const isWidget = chat.contextType === 'widget' || !chat.contextType;
+                            const userInitial = chat.user && chat.user.name ? chat.user.name.charAt(0).toUpperCase() : 'U';
+                        %>
+                        <tr class="chat-row-item" 
+                            data-search="<%= (chat.user.name + ' ' + chat.user.email + ' ' + (chat.lastUserMessage ? chat.lastUserMessage.content : '')).toLowerCase() %>"
+                            data-channel="<%= isWidget ? 'widget' : 'assistant' %>">
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #6C5CE7, #00CEC9); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">
+                                        <%= userInitial %>
+                                    </div>
+                                    <div style="line-height: 1.25; min-width: 0;">
+                                        <div style="font-weight: 700; font-size: 0.9rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            <%= chat.user.name %>
+                                        </div>
+                                        <div style="font-size: 0.75rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            <%= chat.user.email %>
+                                        </div>
+                                        <% if (chat.user.phoneNumber) { %>
+                                            <div style="font-size: 0.7rem; color: #10b981; font-weight: 600; margin-top: 2px;">
+                                                📱 <%= chat.user.phoneNumber %>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <% if (isWidget) { %>
+                                    <span style="background: rgba(108, 92, 231, 0.12); color: #6c5ce7; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; white-space: nowrap;">
+                                        💬 Widget
+                                    </span>
+                                <% } else { %>
+                                    <span style="background: rgba(0, 206, 201, 0.12); color: #00cec9; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; white-space: nowrap;">
+                                        🤖 Asisten AI
+                                    </span>
+                                <% } %>
+                            </td>
+
+                            <td>
+                                <div style="font-size: 0.85rem; font-weight: 600; color: #1e293b; display: flex; align-items: flex-start; gap: 6px; line-height: 1.4;">
+                                    <span style="color: #6c5ce7; flex-shrink: 0;">👤</span>
+                                    <span>
+                                        <% if (chat.lastUserMessage) { %>
+                                            <%= chat.lastUserMessage.content.length > 90 ? chat.lastUserMessage.content.substring(0, 90) + '...' : chat.lastUserMessage.content %>
+                                        <% } else { %>
+                                            <span style="color: #94a3b8; font-style: italic;">Tidak ada teks</span>
+                                        <% } %>
+                                    </span>
+                                </div>
+                            </td>
+
+                            <td>
+                                <div style="font-size: 0.82rem; color: #475569; display: flex; align-items: flex-start; gap: 6px; line-height: 1.4;">
+                                    <span style="color: #00b894; flex-shrink: 0;">🤖</span>
+                                    <span>
+                                        <% if (chat.lastAiMessage) { %>
+                                            <%= chat.lastAiMessage.content.length > 110 ? chat.lastAiMessage.content.substring(0, 110) + '...' : chat.lastAiMessage.content %>
+                                        <% } else { %>
+                                            <span style="color: #94a3b8; font-style: italic;">Belum ada respon</span>
+                                        <% } %>
+                                    </span>
+                                </div>
+                            </td>
+
+                            <td style="color: #64748b; font-size: 0.82rem; font-weight: 500; white-space: nowrap;">
+                                <%= formattedDateStr %>
+                            </td>
+
+                            <td style="text-align: center;">
+                                <span style="background: #f1f5f9; color: #475569; font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                                    <%= chat.totalMessages %>
+                                </span>
+                            </td>
+
+                            <td style="text-align: center; white-space: nowrap;">
+                                <button type="button" class="btn btn-primary btn-sm" onclick="openChatModal('<%= chat.conversationId %>')" style="font-size: 0.8rem; padding: 5px 12px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                                    <span>👁️</span> Buka Chat
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteConversation('<%= chat.conversationId %>', '<%= chat.user.name %>')" title="Hapus Riwayat Sesi Ini" style="font-size: 0.8rem; padding: 5px 8px; border-radius: 8px; margin-left: 4px;">
+                                    🗑️
+                                </button>
+                            </td>
+                        </tr>
+                    <% }); %>
+                    <tr id="emptySearchRow" style="display: none;">
+                        <td colspan="7" style="text-align: center; color: #94a3b8; padding: 40px;">
+                            Tidak ditemukan percakapan yang cocok dengan kata kunci pencarian.
+                        </td>
+                    </tr>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: #94a3b8; padding: 50px 20px;">
+                            <div style="font-size: 2.2rem; margin-bottom: 8px;">💬</div>
+                            <div style="font-weight: 700; color: #475569; font-size: 1.05rem;">Belum Ada Riwayat Chat Customer</div>
+                            <div style="font-size: 0.85rem; color: #94a3b8; margin-top: 4px;">Ketika customer mengajukan pertanyaan lewat Chatbot AI atau halaman Asisten, percakapannya akan otomatis tercatat di sini.</div>
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Detail Percakapan Customer (Centered Dialog) -->
+<div id="chatDetailModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(5px); z-index: 999999; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
+    <div style="background: #ffffff; width: 100%; max-width: 650px; max-height: 85vh; border-radius: 20px; box-shadow: 0 25px 60px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden; animation: modalPop 0.22s ease-out forwards;">
+        <!-- Modal Header -->
+        <div style="background: linear-gradient(135deg, #6C5CE7, #4834d4); color: white; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div id="modalUserInitial" style="width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; color: white;">
+                    U
+                </div>
+                <div>
+                    <h3 id="modalUserName" style="margin: 0; font-size: 1.1rem; font-weight: 700; line-height: 1.2;">Nama Customer</h3>
+                    <div id="modalUserEmail" style="font-size: 0.78rem; opacity: 0.9; margin-top: 2px;">customer@example.com</div>
+                </div>
+            </div>
+            <button type="button" onclick="closeChatModal()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1; padding: 4px 8px; border-radius: 6px; opacity: 0.85;">&times;</button>
+        </div>
+
+        <!-- Meta Subheader -->
+        <div style="background: #f8fafc; padding: 10px 24px; border-bottom: 1px solid #e2e8f0; font-size: 0.8rem; color: #64748b; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                Saluran: <span id="modalChannel" style="font-weight: 700; color: #6C5CE7;">Widget Popup</span>
+            </div>
+            <div>
+                Total Pesan: <span id="modalMsgCount" style="font-weight: 700; color: #1e293b;">0</span>
+            </div>
+        </div>
+
+        <!-- Chat Stream Body -->
+        <div id="modalChatBody" style="flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc; display: flex; flex-direction: column; gap: 14px;">
+            <div style="text-align: center; color: #94a3b8; font-size: 0.85rem; padding: 30px;">
+                Memuat riwayat percakapan...
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div style="padding: 14px 24px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; align-items: center; gap: 10px;">
+            <button type="button" class="btn btn-secondary" onclick="closeChatModal()" style="border-radius: 10px; font-weight: 600; font-size: 0.88rem; padding: 8px 20px;">
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes modalPop {
+    from { opacity: 0; transform: scale(0.92) translateY(15px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-bubble-user {
+    align-self: flex-end;
+    max-width: 82%;
+    background: linear-gradient(135deg, #6c5ce7, #574b90);
+    color: #ffffff;
+    padding: 12px 16px;
+    border-radius: 16px 16px 4px 16px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.25);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.modal-bubble-ai {
+    align-self: flex-start;
+    max-width: 85%;
+    background: #ffffff;
+    color: #1e293b;
+    padding: 13px 18px;
+    border-radius: 16px 16px 16px 4px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.modal-bubble-meta {
+    font-size: 0.7rem;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.modal-bubble-user .modal-bubble-meta {
+    justify-content: flex-end;
+    color: rgba(255, 255, 255, 0.8);
+}
+.modal-bubble-ai .modal-bubble-meta {
+    justify-content: flex-start;
+    color: #94a3b8;
+}
+</style>
+
+<script>
+function filterChatTable() {
+    const searchVal = document.getElementById('chatSearchInput').value.toLowerCase().trim();
+    const channelVal = document.getElementById('chatChannelFilter').value;
+    const rows = document.querySelectorAll('.chat-row-item');
+    const emptyRow = document.getElementById('emptySearchRow');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const rowSearch = row.getAttribute('data-search') || '';
+        const rowChannel = row.getAttribute('data-channel') || '';
+
+        const matchesSearch = !searchVal || rowSearch.includes(searchVal);
+        const matchesChannel = (channelVal === 'all') || (rowChannel === channelVal);
+
+        if (matchesSearch && matchesChannel) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    if (emptyRow) {
+        emptyRow.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+    }
+}
+
+async function openChatModal(conversationId) {
+    const modal = document.getElementById('chatDetailModal');
+    const modalBody = document.getElementById('modalChatBody');
+    const nameEl = document.getElementById('modalUserName');
+    const emailEl = document.getElementById('modalUserEmail');
+    const initialEl = document.getElementById('modalUserInitial');
+    const channelEl = document.getElementById('modalChannel');
+    const countEl = document.getElementById('modalMsgCount');
+
+    modalBody.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px;">Memuat percakapan...</div>';
+    modal.style.display = 'flex';
+
+    try {
+        const res = await fetch(`/admin/api/chat-history/${conversationId}`);
+        const data = await res.json();
+
+        if (data.success && data.conversation) {
+            const conv = data.conversation;
+            const u = conv.user;
+            nameEl.textContent = u.name || 'Customer';
+            emailEl.textContent = u.email || '-';
+            initialEl.textContent = (u.name && u.name.length > 0) ? u.name.charAt(0).toUpperCase() : 'U';
+            channelEl.textContent = conv.channelLabel || 'Widget';
+            countEl.textContent = conv.totalMessages || 0;
+
+            modalBody.innerHTML = '';
+
+            if (conv.messages && conv.messages.length > 0) {
+                conv.messages.forEach(m => {
+                    const isUser = m.role === 'user';
+                    const wrapper = document.createElement('div');
+                    wrapper.style.display = 'flex';
+                    wrapper.style.flexDirection = 'column';
+                    wrapper.style.width = '100%';
+
+                    const bubble = document.createElement('div');
+                    bubble.className = isUser ? 'modal-bubble-user' : 'modal-bubble-ai';
+                    bubble.textContent = m.content;
+
+                    const meta = document.createElement('div');
+                    meta.className = 'modal-bubble-meta';
+                    meta.textContent = `${isUser ? '👤 Customer' : '🤖 SkinCheck AI'} • ${m.formattedDate} ${m.formattedTime}`;
+                    bubble.appendChild(meta);
+
+                    wrapper.appendChild(bubble);
+                    modalBody.appendChild(wrapper);
+                });
+            } else {
+                modalBody.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px;">Belum ada pesan dalam percakapan ini.</div>';
+            }
+
+            modalBody.scrollTop = modalBody.scrollHeight;
+        } else {
+            modalBody.innerHTML = '<div style="text-align: center; color: #ef4444; padding: 40px;">Gagal memuat detail percakapan.</div>';
+        }
+    } catch (e) {
+        console.error(e);
+        modalBody.innerHTML = '<div style="text-align: center; color: #ef4444; padding: 40px;">Terjadi kendala jaringan saat memuat riwayat.</div>';
+    }
+}
+
+function closeChatModal() {
+    document.getElementById('chatDetailModal').style.display = 'none';
+}
+
+async function deleteConversation(conversationId, customerName) {
+    if (!confirm(`Apakah Anda yakin ingin menghapus seluruh riwayat percakapan untuk ${customerName || 'customer ini'}?`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`/admin/api/chat-history/${conversationId}/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (window.showCenteredAlert) {
+                await window.showCenteredAlert({
+                    title: 'Percakapan Dihapus',
+                    desc: 'Riwayat percakapan customer telah berhasil dihapus dari sistem.',
+                    icon: '🗑️',
+                    type: 'error',
+                    btnText: 'Selesai'
+                });
+            }
+            window.location.reload();
+        } else {
+            if (window.showCenteredAlert) {
+                await window.showCenteredAlert({
+                    title: 'Gagal Menghapus',
+                    desc: 'Gagal menghapus percakapan: ' + (data.message || 'Error'),
+                    icon: '⚠️',
+                    type: 'error',
+                    btnText: 'Tutup'
+                });
+            }
+        }
+    } catch (e) {
+        console.error(e);
+        if (window.showCenteredAlert) {
+            await window.showCenteredAlert({
+                title: 'Gangguan Jaringan',
+                desc: 'Terjadi kesalahan jaringan saat menghapus percakapan.',
+                icon: '⚠️',
+                type: 'error',
+                btnText: 'Tutup'
+            });
+        }
+    }
+}
+</script>

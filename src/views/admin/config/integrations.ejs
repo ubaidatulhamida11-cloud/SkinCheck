@@ -1,0 +1,180 @@
+<div style="margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+    <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span style="font-size: 1.5rem;">⚡</span>
+            <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text-main, #1e293b); margin: 0;">Status Integrasi Sistem</h1>
+            <span class="badge" style="background: rgba(0, 184, 148, 0.15); color: #00b894; font-weight: 700; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;">LIVE HEALTH MONITOR</span>
+        </div>
+        <p style="color: var(--text-muted, #64748b); margin: 0; font-size: 0.95rem;">Monitoring kesehatan koneksi layanan kecerdasan buatan (AI) dan gateway pengiriman WhatsApp OTP secara real-time.</p>
+    </div>
+    <div>
+        <button type="button" class="btn btn-outline-secondary" onclick="location.reload()" style="padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.88rem;">
+            🔄 Refresh Status
+        </button>
+    </div>
+</div>
+
+<!-- TOP CARDS: 2 COLUMNS (AI STATUS & WHATSAPP STATUS) -->
+<div class="row g-4 mb-4">
+    <!-- 1. AI STATUS CARD -->
+    <div class="col-lg-6">
+        <div class="stat-card h-100" style="border-top: 4px solid #6C5CE7;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size: 1.4rem;">🤖</span>
+                    <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text-main, #1e293b);">Status Integrasi AI</h3>
+                </div>
+                <% if (health.ai.provider_status === 'connected') { %>
+                    <span class="badge" style="background: rgba(0, 184, 148, 0.15); color: #00b894; font-weight: 700;">● HEALTHY / OPERATIONAL</span>
+                <% } else if (health.ai.provider_status === 'error') { %>
+                    <span class="badge" style="background: rgba(214, 48, 49, 0.15); color: #d63031; font-weight: 700;">● DISCONNECTED / ERROR</span>
+                <% } else { %>
+                    <span class="badge" style="background: rgba(100, 116, 139, 0.15); color: #64748b; font-weight: 700;">● UNKNOWN / IDLE</span>
+                <% } %>
+            </div>
+
+            <div style="background: #f8fafc; border-radius: 10px; padding: 16px; margin-bottom: 20px; border: 1px solid #e2e8f0; font-size: 0.88rem;">
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Provider LLM Aktif:</span>
+                    <strong style="color: #6C5CE7;"><%= (health.ai.active_provider || 'gemini').toUpperCase() %></strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Model Inferensi Aktif:</span>
+                    <strong><%= health.ai.active_model %></strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Latency Pengujian Terakhir:</span>
+                    <strong><%= health.ai.last_latency_ms ? health.ai.last_latency_ms + ' ms' : '-' %></strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Waktu Uji Terakhir:</span>
+                    <span class="small"><%= health.ai.last_tested ? new Date(health.ai.last_tested).toLocaleString('id-ID') : 'Belum pernah diuji' %></span>
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-muted">Analisis Visual Foto:</span>
+                    <span style="color: #00b894; font-weight: 600;">MobileNetV2 TFJS (Computer Vision)</span>
+                </div>
+            </div>
+
+            <% if (health.ai.last_error) { %>
+                <div class="alert alert-danger py-2 px-3 small rounded-3 mb-3">
+                    <strong>Pesan Error:</strong> <%= health.ai.last_error %>
+                </div>
+            <% } %>
+
+            <div class="d-flex gap-2">
+                <a href="/admin/config/ai" class="btn btn-outline-primary btn-sm flex-fill py-2">
+                    ⚙️ Buka Konfigurasi AI
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. WHATSAPP STATUS CARD -->
+    <div class="col-lg-6">
+        <div class="stat-card h-100" style="border-top: 4px solid #25D366;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size: 1.4rem;">💬</span>
+                    <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text-main, #1e293b);">Status Integrasi WhatsApp OTP</h3>
+                </div>
+                <% if (health.whatsapp.provider_status === 'connected') { %>
+                    <span class="badge" style="background: rgba(0, 184, 148, 0.15); color: #00b894; font-weight: 700;">● CONNECTED / READY</span>
+                <% } else if (health.whatsapp.provider_status === 'disconnected') { %>
+                    <span class="badge" style="background: rgba(225, 112, 85, 0.15); color: #e17055; font-weight: 700;">● DEVICE DISCONNECTED</span>
+                <% } else { %>
+                    <span class="badge" style="background: rgba(100, 116, 139, 0.15); color: #64748b; font-weight: 700;">● UNKNOWN / IDLE</span>
+                <% } %>
+            </div>
+
+            <div style="background: #f8fafc; border-radius: 10px; padding: 16px; margin-bottom: 20px; border: 1px solid #e2e8f0; font-size: 0.88rem;">
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Gateway Aktif:</span>
+                    <strong style="color: #128C7E;"><%= (health.whatsapp.active_provider || 'fonnte').toUpperCase() %></strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Tipe Autentikasi:</span>
+                    <strong>HMAC-SHA256 6-Digit OTP</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Masa Berlaku / Cooldown:</span>
+                    <strong><%= health.whatsapp.otp_expiry %> / <%= health.whatsapp.otp_cooldown %></strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Latency Gateway Terakhir:</span>
+                    <strong><%= health.whatsapp.last_latency_ms ? health.whatsapp.last_latency_ms + ' ms' : '-' %></strong>
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-muted">Waktu Uji Terakhir:</span>
+                    <span class="small"><%= health.whatsapp.last_tested ? new Date(health.whatsapp.last_tested).toLocaleString('id-ID') : 'Belum pernah diuji' %></span>
+                </div>
+            </div>
+
+            <% if (health.whatsapp.last_error) { %>
+                <div class="alert alert-warning py-2 px-3 small rounded-3 mb-3">
+                    <strong>Pesan Status:</strong> <%= health.whatsapp.last_error %>
+                </div>
+            <% } %>
+
+            <div class="d-flex gap-2">
+                <a href="/admin/config/whatsapp" class="btn btn-outline-success btn-sm flex-fill py-2">
+                    ⚙️ Buka Pengaturan WhatsApp OTP
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RECENT INTEGRATION ACTIVITY TABLE -->
+<div class="stat-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main, #1e293b); margin: 0;">
+            Aktivitas Pengujian & Integrasi Terakhir
+        </h3>
+        <a href="/admin/config/audit-logs" class="btn btn-link btn-sm p-0 text-decoration-none fw-semibold">
+            Lihat Semua Audit Log &rarr;
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 170px;">Waktu</th>
+                    <th style="width: 140px;">Kategori</th>
+                    <th>Aksi & Detail Pengujian</th>
+                    <th style="width: 120px;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (!health.recentAudit || health.recentAudit.length === 0) { %>
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">Belum ada catatan aktivitas pengujian.</td>
+                    </tr>
+                <% } else { %>
+                    <% health.recentAudit.forEach(log => { %>
+                        <tr>
+                            <td class="small text-muted"><%= new Date(log.timestamp).toLocaleString('id-ID') %></td>
+                            <td>
+                                <span class="badge" style="background: rgba(108, 92, 231, 0.12); color: #6C5CE7; font-size: 0.75rem;">
+                                    <%= log.category %>
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-semibold" style="color: var(--text-main, #1e293b);"><%= log.action %></div>
+                                <% if (log.details) { %>
+                                    <div class="small text-muted" style="font-family: monospace; font-size: 0.78rem;"><%= log.details %></div>
+                                <% } %>
+                            </td>
+                            <td>
+                                <span class="badge" style="background: <%= log.status === 'SUCCESS' ? 'rgba(0,184,148,0.15)' : 'rgba(214,48,49,0.15)' %>; color: <%= log.status === 'SUCCESS' ? '#00b894' : '#d63031' %>;">
+                                    ● <%= log.status %>
+                                </span>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>

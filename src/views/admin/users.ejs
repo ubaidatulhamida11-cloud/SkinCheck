@@ -1,0 +1,643 @@
+<div style="margin-bottom: 25px;">
+    <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">Kelola Pengguna</h1>
+    <p style="color: var(--text-muted); margin: 0; font-size: 0.95rem;">Daftar lengkap seluruh pengguna terdaftar di sistem. Anda dapat mengubah detail (edit) atau menghapus akun pengguna.</p>
+</div>
+
+<div class="stat-card" style="padding: 24px; margin-bottom: 25px;">
+    <!-- Stat Badges & Quick Role Filter Pills -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-sm role-filter-pill active-role-pill" id="pill-role-all" onclick="setRoleFilter('all')" style="border-radius: 20px; font-weight: 700; padding: 6px 14px; font-size: 0.85rem; border: 1px solid var(--border-color, #e2e8f0); background: #6C5CE7; color: white;">
+                👥 Semua (<span id="count-all-badge"><%= locals.users ? users.length : 0 %></span>)
+            </button>
+            <button type="button" class="btn btn-sm role-filter-pill" id="pill-role-admin" onclick="setRoleFilter('admin')" style="border-radius: 20px; font-weight: 700; padding: 6px 14px; font-size: 0.85rem; border: 1px solid rgba(214, 48, 49, 0.3); background: rgba(225, 112, 85, 0.1); color: #d63031;">
+                🛡️ Admin (<span id="count-admin-badge"><%= locals.stats && stats.roles ? (stats.roles['admin'] || 0) : 0 %></span>)
+            </button>
+            <button type="button" class="btn btn-sm role-filter-pill" id="pill-role-customer" onclick="setRoleFilter('customer')" style="border-radius: 20px; font-weight: 700; padding: 6px 14px; font-size: 0.85rem; border: 1px solid rgba(108, 92, 231, 0.3); background: rgba(108, 92, 231, 0.1); color: #6C5CE7;">
+                👤 Customer (<span id="count-customer-badge"><%= locals.stats && stats.roles ? (stats.roles['customer'] || 0) : 0 %></span>)
+            </button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="font-size: 0.85rem; color: var(--text-muted, #64748b);">
+                Status: <span class="badge-status-active">● <%= locals.stats ? stats.active : 0 %> Aktif</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" onclick="openAddUserModal()" style="border-radius: 8px; font-weight: 700; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; background: #2563eb; border: none; box-shadow: 0 2px 8px rgba(37,99,235,0.35);">
+                <span>➕</span> Tambah Pengguna
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 20px;">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white" style="border-color: #cbd5e1;">🔍</span>
+                    <input type="text" id="user-search-input" class="form-control" placeholder="Cari nama, email, atau ID pengguna..." onkeyup="filterUsers()" style="border-color: #cbd5e1;">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select id="user-role-select" class="form-select form-select-sm" onchange="onRoleSelectChange()" style="border-color: #cbd5e1; font-weight: 600;">
+                    <option value="all">Semua Peran (Role)</option>
+                    <option value="admin">🛡️ Administrator Saja</option>
+                    <option value="customer">👤 Customer Saja</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select id="user-status-select" class="form-select form-select-sm" onchange="filterUsers()" style="border-color: #cbd5e1;">
+                    <option value="all">Semua Status</option>
+                    <option value="active">● Aktif</option>
+                    <option value="deleted">Nonaktif</option>
+                </select>
+            </div>
+            <div class="col-md-2 text-end">
+                <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="resetUserFilters()" style="border-radius: 6px;">
+                    ↺ Reset Filter
+                </button>
+            </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+            <span class="small text-muted" id="user-filtered-status">
+                Menampilkan <%= locals.users ? users.length : 0 %> dari <%= locals.users ? users.length : 0 %> pengguna
+            </span>
+            <span id="active-filter-indicator" class="badge" style="background: rgba(108, 92, 231, 0.1); color: #6C5CE7; font-size: 0.72rem; display: none;">
+                Filter Aktif
+            </span>
+        </div>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="data-table" id="users-table">
+            <thead>
+                <tr>
+                    <th>ID Akun</th>
+                    <th>Nama Lengkap</th>
+                    <th>Email</th>
+                    <th>Peran (Role)</th>
+                    <th>Status</th>
+                    <th>Terdaftar Sejak</th>
+                    <th style="text-align: center; width: 150px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (locals.users && users.length > 0) { %>
+                    <% users.forEach(u => { %>
+                        <tr id="user-row-<%= u.id %>" class="user-row" 
+                            data-role="<%= (u.role || 'customer').toLowerCase() %>" 
+                            data-status="<%= (u.status || 'active').toLowerCase() %>"
+                            data-search="<%= ((u.name || '') + ' ' + (u.email || '') + ' #' + u.id).toLowerCase() %>">
+                            <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-muted);">
+                                #<%= u.id %>
+                            </td>
+                            <td style="font-weight: 600; color: var(--text-main);" id="user-name-<%= u.id %>">
+                                <%= u.name %>
+                            </td>
+                            <td id="user-email-<%= u.id %>"><%= u.email %></td>
+                            <td id="user-role-cell-<%= u.id %>">
+                                <% if (u.role === 'admin') { %>
+                                    <span class="badge-role-admin">🛡️ Admin</span>
+                                <% } else { %>
+                                    <span class="badge-role-customer">👤 Customer</span>
+                                <% } %>
+                            </td>
+                            <td id="user-status-cell-<%= u.id %>">
+                                <% if (u.status === 'active') { %>
+                                    <span class="badge-status-active">● Aktif</span>
+                                <% } else { %>
+                                    <span style="background: rgba(148, 163, 184, 0.2); color: var(--text-muted); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;"><%= u.status %></span>
+                                <% } %>
+                            </td>
+                            <td style="color: var(--text-muted); font-size: 0.85rem;">
+                                <%= u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' }) : '-' %>
+                            </td>
+                            <td style="text-align: center;">
+                                <div style="display: flex; gap: 8px; justify-content: center;">
+                                    <button type="button" class="btn btn-secondary btn-edit-user" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 6px;" 
+                                        data-id="<%= u.id %>"
+                                        data-name="<%= u.name %>"
+                                        data-email="<%= u.email %>"
+                                        data-phone="<%= u.phone_number || '' %>"
+                                        data-role="<%= u.role || 'customer' %>"
+                                        data-status="<%= u.status || 'active' %>">
+                                        ✏️ Edit
+                                    </button>
+                                    <% if (locals.user && locals.user.id === u.id) { %>
+                                        <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; opacity: 0.4; cursor: not-allowed;" title="Akun Anda yang sedang aktif" disabled>
+                                            🗑️ Hapus
+                                        </button>
+                                    <% } else { %>
+                                        <button type="button" class="btn btn-secondary btn-delete-user" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; color: var(--error); border-color: rgba(214, 48, 49, 0.3);" 
+                                            data-id="<%= u.id %>"
+                                            data-name="<%= u.name %>">
+                                            🗑️ Hapus
+                                        </button>
+                                    <% } %>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }); %>
+                    <!-- Empty filter results placeholder -->
+                    <tr id="no-filtered-users-row" style="display: none;">
+                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 35px 20px;">
+                            <div style="font-size: 1.5rem; margin-bottom: 8px;">🔍</div>
+                            <strong>Tidak ada pengguna yang cocok dengan kriteria filter.</strong>
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="resetUserFilters()">
+                                    Tampilkan Semua Pengguna
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">Tidak ada pengguna ditemukan.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Edit User -->
+<div id="editUserModal" class="modal-overlay">
+    <div class="modal-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-main);">✏️ Edit Data Pengguna</h3>
+            <button type="button" onclick="closeEditModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer;">&times;</button>
+        </div>
+
+        <form id="editUserForm" onsubmit="submitEditUser(event)">
+            <input type="hidden" id="edit-user-id" name="id">
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Nama Lengkap</label>
+                <input type="text" id="edit-user-name" name="name" class="form-control" required style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Email</label>
+                <input type="email" id="edit-user-email" name="email" class="form-control" required style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Nomor Telepon / WhatsApp (Opsional)</label>
+                <input type="text" id="edit-user-phone" name="phone_number" class="form-control" placeholder="+628123456789" style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px;">
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Peran (Role)</label>
+                    <select id="edit-user-role" name="role" class="form-control" style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+                        <option value="customer">👤 Customer</option>
+                        <option value="admin">🛡️ Admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Status Akun</label>
+                    <select id="edit-user-status" name="status" class="form-control" style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+                        <option value="active">● Aktif</option>
+                        <option value="deleted">Nonaktif / Dihapus</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()" style="padding: 9px 18px; border-radius: 8px;">Batal</button>
+                <button type="submit" id="btn-save-edit" class="btn btn-primary" style="padding: 9px 20px; border-radius: 8px;">Simpan Perubahan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Tambah User Baru -->
+<div id="addUserModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-main);">➕ Tambah Pengguna Baru</h3>
+            <button type="button" onclick="closeAddUserModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer;">&times;</button>
+        </div>
+
+        <form id="addUserForm" onsubmit="submitAddUser(event)">
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Nama Lengkap *</label>
+                <input type="text" id="add-user-name" name="name" class="form-control" placeholder="Contoh: Dhini Rahim" required style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Email *</label>
+                <input type="email" id="add-user-email" name="email" class="form-control" placeholder="user@skincheck.local" required style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Kata Sandi (Password) *</label>
+                <input type="password" id="add-user-password" name="password" class="form-control" placeholder="Minimal 6 karakter" required style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Nomor WhatsApp (Opsional)</label>
+                <input type="text" id="add-user-phone" name="phone_number" class="form-control" placeholder="+6281234567890" style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px;">
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Peran (Role)</label>
+                    <select id="add-user-role" name="role" class="form-control" style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+                        <option value="customer" selected>👤 Customer</option>
+                        <option value="admin">🛡️ Administrator</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Status Akun</label>
+                    <select id="add-user-status" name="status" class="form-control" style="width: 100%; padding: 10px 14px; border-radius: 8px;">
+                        <option value="active" selected>● Aktif</option>
+                        <option value="deleted">Nonaktif</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeAddUserModal()" style="padding: 9px 18px; border-radius: 8px;">Batal</button>
+                <button type="submit" id="btn-save-add" class="btn btn-primary" style="padding: 9px 20px; border-radius: 8px; background: #2563eb; border: none;">Simpan Pengguna</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openAddUserModal() {
+    document.getElementById('addUserForm').reset();
+    document.getElementById('addUserModal').style.display = 'flex';
+}
+
+function closeAddUserModal() {
+    document.getElementById('addUserModal').style.display = 'none';
+}
+
+async function submitAddUser(e) {
+    e.preventDefault();
+    const name = document.getElementById('add-user-name').value.trim();
+    const email = document.getElementById('add-user-email').value.trim();
+    const password = document.getElementById('add-user-password').value;
+    const phone_number = document.getElementById('add-user-phone').value.trim();
+    const role = document.getElementById('add-user-role').value;
+    const status = document.getElementById('add-user-status').value;
+
+    const btn = document.getElementById('btn-save-add');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    try {
+        const res = await fetch('/admin/users/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ name, email, password, role, status, phone_number, phone_verified: Boolean(phone_number) })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            closeAddUserModal();
+            if (window.showCenteredAlert) {
+                await window.showCenteredAlert({
+                    title: 'Pengguna Berhasil Ditambahkan',
+                    desc: `Pengguna baru "${name}" telah berhasil didaftarkan ke sistem dan otomatis terdaftar di database chatbot AI.`,
+                    icon: '👤',
+                    type: 'success',
+                    btnText: 'Selesai'
+                });
+            }
+            window.location.href = '/admin/users';
+        } else {
+            if (window.showCenteredAlert) {
+                await window.showCenteredAlert({
+                    title: 'Gagal Menambahkan Pengguna',
+                    desc: data.message || 'Terjadi kesalahan saat menambahkan pengguna.',
+                    icon: '⚠️',
+                    type: 'error',
+                    btnText: 'Tutup'
+                });
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        if (window.showCenteredAlert) {
+            await window.showCenteredAlert({
+                title: 'Gangguan Jaringan',
+                desc: 'Tidak dapat terhubung ke server. Silakan coba lagi.',
+                icon: '⚠️',
+                type: 'error',
+                btnText: 'Tutup'
+            });
+        }
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Simpan Pengguna';
+    }
+}
+
+function openEditModal(id, name, email, role, status, phone) {
+    document.getElementById('edit-user-id').value = id;
+    document.getElementById('edit-user-name').value = name;
+    document.getElementById('edit-user-email').value = email;
+    document.getElementById('edit-user-phone').value = phone || '';
+    document.getElementById('edit-user-role').value = role || 'customer';
+    document.getElementById('edit-user-status').value = status || 'active';
+    document.getElementById('editUserModal').style.display = 'flex';
+}
+
+function closeEditModal() {
+    document.getElementById('editUserModal').style.display = 'none';
+}
+
+// Close modal when clicking outside card
+window.addEventListener('click', (e) => {
+    const editModal = document.getElementById('editUserModal');
+    const addModal = document.getElementById('addUserModal');
+    if (e.target === editModal) {
+        closeEditModal();
+    }
+    if (e.target === addModal) {
+        closeAddUserModal();
+    }
+});
+
+async function submitEditUser(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit-user-id').value;
+    const name = document.getElementById('edit-user-name').value.trim();
+    const email = document.getElementById('edit-user-email').value.trim();
+    const phone_number = document.getElementById('edit-user-phone').value.trim();
+    const role = document.getElementById('edit-user-role').value;
+    const status = document.getElementById('edit-user-status').value;
+
+    const btn = document.getElementById('btn-save-edit');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    try {
+        const res = await fetch(`/admin/users/${id}/edit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ name, email, role, status, phone_number })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            closeEditModal();
+            if (window.showCenteredAlert) {
+                await window.showCenteredAlert({
+                    title: 'Perubahan Berhasil Disimpan',
+                    desc: `Data pengguna "${name}" berhasil diperbarui di sistem database dan otomatis disinkronkan ke chatbot AI.`,
+                    icon: '✏️',
+                    type: 'edit',
+                    btnText: 'Selesai'
+                });
+            }
+            window.location.reload();
+        } else {
+            if (window.showCenteredAlert) {
+                await window.showCenteredAlert({
+                    title: 'Gagal Menyimpan Perubahan',
+                    desc: data.message || 'Terjadi kesalahan saat memperbarui data pengguna.',
+                    icon: '⚠️',
+                    type: 'error',
+                    btnText: 'Tutup'
+                });
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        if (window.showCenteredAlert) {
+            await window.showCenteredAlert({
+                title: 'Gangguan Jaringan',
+                desc: 'Tidak dapat terhubung ke server. Silakan coba lagi.',
+                icon: '⚠️',
+                type: 'error',
+                btnText: 'Tutup'
+            });
+        }
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Simpan Perubahan';
+    }
+}
+
+async function confirmDeleteUser(id, name) {
+    let confirmed = false;
+    if (window.showCenteredConfirm) {
+        confirmed = await window.showCenteredConfirm({
+            title: 'Hapus Pengguna',
+            desc: `Apakah Anda yakin ingin menghapus pengguna "${name}" dari sistem database? Tindakan ini bersifat permanen.`,
+            confirmText: 'Ya, Hapus Permanen',
+            cancelText: 'Batal',
+            icon: '🗑️',
+            confirmBg: '#ef4444'
+        });
+    } else {
+        confirmed = confirm(`Apakah Anda yakin ingin menghapus pengguna "${name}" dari sistem database? Tindakan ini bersifat permanen.`);
+    }
+
+    if (confirmed) {
+        try {
+            const res = await fetch(`/admin/users/${id}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                if (window.showCenteredAlert) {
+                    await window.showCenteredAlert({
+                        title: 'Pengguna Berhasil Dihapus',
+                        desc: `Pengguna "${name}" telah berhasil dihapus dari sistem database dan otomatis diperbarui di chatbot AI.`,
+                        icon: '🗑️',
+                        type: 'error',
+                        btnText: 'Selesai'
+                    });
+                }
+                const row = document.getElementById(`user-row-${id}`);
+                if (row) row.remove();
+                window.location.reload();
+            } else {
+                if (window.showCenteredAlert) {
+                    await window.showCenteredAlert({
+                        title: 'Gagal Menghapus Pengguna',
+                        desc: data.message || 'Gagal menghapus pengguna dari database.',
+                        icon: '⚠️',
+                        type: 'error',
+                        btnText: 'Tutup'
+                    });
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            if (window.showCenteredAlert) {
+                await window.showCenteredAlert({
+                    title: 'Gangguan Jaringan',
+                    desc: 'Terjadi kesalahan jaringan saat menghapus pengguna.',
+                    icon: '⚠️',
+                    type: 'error',
+                    btnText: 'Tutup'
+                });
+            }
+        }
+    }
+}
+
+// --- ROLE & SEARCH FILTERING LOGIC ---
+let activeRole = "<%= locals.activeRoleFilter || 'all' %>";
+
+function setRoleFilter(role) {
+    activeRole = role.toLowerCase();
+
+    const pillAll = document.getElementById('pill-role-all');
+    const pillAdmin = document.getElementById('pill-role-admin');
+    const pillCustomer = document.getElementById('pill-role-customer');
+
+    if (pillAll && pillAdmin && pillCustomer) {
+        if (activeRole === 'admin') {
+            pillAdmin.style.background = '#d63031';
+            pillAdmin.style.color = 'white';
+            pillAll.style.background = 'rgba(100, 116, 139, 0.1)';
+            pillAll.style.color = 'var(--text-main, #1e293b)';
+            pillCustomer.style.background = 'rgba(108, 92, 231, 0.1)';
+            pillCustomer.style.color = '#6C5CE7';
+        } else if (activeRole === 'customer') {
+            pillCustomer.style.background = '#6C5CE7';
+            pillCustomer.style.color = 'white';
+            pillAll.style.background = 'rgba(100, 116, 139, 0.1)';
+            pillAll.style.color = 'var(--text-main, #1e293b)';
+            pillAdmin.style.background = 'rgba(225, 112, 85, 0.1)';
+            pillAdmin.style.color = '#d63031';
+        } else {
+            pillAll.style.background = '#6C5CE7';
+            pillAll.style.color = 'white';
+            pillAdmin.style.background = 'rgba(225, 112, 85, 0.1)';
+            pillAdmin.style.color = '#d63031';
+            pillCustomer.style.background = 'rgba(108, 92, 231, 0.1)';
+            pillCustomer.style.color = '#6C5CE7';
+        }
+    }
+
+    // Sync dropdown
+    const select = document.getElementById('user-role-select');
+    if (select) select.value = activeRole;
+
+    filterUsers();
+
+    // Update URL query param cleanly without reload
+    const url = new URL(window.location);
+    if (activeRole !== 'all') {
+        url.searchParams.set('role', activeRole);
+    } else {
+        url.searchParams.delete('role');
+    }
+    window.history.replaceState({}, '', url);
+}
+
+function onRoleSelectChange() {
+    const selected = document.getElementById('user-role-select').value;
+    setRoleFilter(selected);
+}
+
+function filterUsers() {
+    const query = (document.getElementById('user-search-input')?.value || '').toLowerCase().trim();
+    const role = document.getElementById('user-role-select')?.value || 'all';
+    const status = document.getElementById('user-status-select')?.value || 'all';
+    const rows = document.querySelectorAll('.user-row');
+    const noResultsRow = document.getElementById('no-filtered-users-row');
+    const indicator = document.getElementById('active-filter-indicator');
+    const statusText = document.getElementById('user-filtered-status');
+
+    let visibleCount = 0;
+    const totalCount = rows.length;
+
+    rows.forEach(row => {
+        const rowRole = row.getAttribute('data-role');
+        const rowStatus = row.getAttribute('data-status');
+        const rowSearch = row.getAttribute('data-search') || '';
+
+        const matchRole = (role === 'all' || rowRole === role);
+        const matchStatus = (status === 'all' || rowStatus === status);
+        const matchQuery = (!query || rowSearch.includes(query));
+
+        if (matchRole && matchStatus && matchQuery) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    if (noResultsRow) {
+        noResultsRow.style.display = (visibleCount === 0) ? '' : 'none';
+    }
+
+    const isFiltered = (role !== 'all' || status !== 'all' || query !== '');
+    if (indicator) {
+        indicator.style.display = isFiltered ? 'inline-block' : 'none';
+        indicator.textContent = role !== 'all' ? `Filter: ${role.toUpperCase()}` : 'Filter Aktif';
+    }
+
+    if (statusText) {
+        let filterDesc = '';
+        if (role === 'admin') filterDesc = ' (Hanya Administrator)';
+        if (role === 'customer') filterDesc = ' (Hanya Customer)';
+        statusText.textContent = `Menampilkan ${visibleCount} dari ${totalCount} pengguna${filterDesc}`;
+    }
+}
+
+function resetUserFilters() {
+    const searchInput = document.getElementById('user-search-input');
+    const statusSelect = document.getElementById('user-status-select');
+    if (searchInput) searchInput.value = '';
+    if (statusSelect) statusSelect.value = 'all';
+    setRoleFilter('all');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize role filter from URL or locals
+    const urlParams = new URLSearchParams(window.location.search);
+    const roleParam = urlParams.get('role') || activeRole || 'all';
+    if (roleParam !== 'all') {
+        setRoleFilter(roleParam);
+    } else {
+        filterUsers();
+    }
+
+    // Automatically open Add User modal if URL query has action=new
+    if (urlParams.get('action') === 'new') {
+        openAddUserModal();
+    }
+
+    // Connect sidebar "Tambah Pengguna" link if clicked on this page
+    const sidebarAddLink = document.getElementById('sidebar-add-user-link');
+    if (sidebarAddLink) {
+        sidebarAddLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openAddUserModal();
+        });
+    }
+
+    document.querySelectorAll('.btn-edit-user').forEach(btn => {
+        btn.addEventListener('click', () => {
+            openEditModal(btn.dataset.id, btn.dataset.name, btn.dataset.email, btn.dataset.role, btn.dataset.status, btn.dataset.phone);
+        });
+    });
+
+    document.querySelectorAll('.btn-delete-user').forEach(btn => {
+        btn.addEventListener('click', () => {
+            confirmDeleteUser(btn.dataset.id, btn.dataset.name);
+        });
+    });
+});
+</script>

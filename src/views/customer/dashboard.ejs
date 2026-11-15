@@ -1,0 +1,236 @@
+<div class="dashboard-header" style="margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px;">
+    <div>
+        <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 8px;">
+            Welcome back, <span style="background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"><%= locals.user ? locals.user.name.split(' ')[0] : 'User' %></span>!
+        </h2>
+        <p style="color: var(--text-muted); font-size: 1.1rem; margin: 0;">Ready to check in on your skin today?</p>
+    </div>
+    <div style="text-align: right; background: var(--surface); padding: 10px 20px; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid var(--border-color);">
+        <div style="font-weight: 600; color: var(--text-main); font-size: 0.95rem;"><%= new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) %></div>
+    </div>
+</div>
+
+<!-- Add some scoped styles for hover effects -->
+<style>
+    .action-card {
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }
+    .action-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 40px rgba(31, 38, 135, 0.12);
+    }
+    .action-card::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 100%);
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+    }
+    .action-card:hover::after {
+        opacity: 1;
+    }
+    .metric-row {
+        display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 10px;
+    }
+</style>
+
+<!-- Primary Action Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-bottom: 40px;">
+    
+    <a href="/app/scan" class="glass-card action-card" style="padding: 24px; text-align: center; border-bottom: 4px solid var(--primary);">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, rgba(108, 92, 231, 0.1), rgba(108, 92, 231, 0.2)); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 16px; color: var(--primary);">📸</div>
+        <h4 style="margin-bottom: 8px; color: var(--text-main); font-size: 1.15rem;">Start Face Scan</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Analyze visual changes</p>
+    </a>
+    
+    <a href="/app/sunscreen" class="glass-card action-card" style="padding: 24px; text-align: center; border-bottom: 4px solid var(--secondary);">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, rgba(0, 206, 201, 0.1), rgba(0, 206, 201, 0.2)); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 16px; color: var(--secondary);">☀️</div>
+        <h4 style="margin-bottom: 8px; color: var(--text-main); font-size: 1.15rem;">Check Sunscreen</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">View evenness estimate</p>
+    </a>
+
+    <a href="/app/history" class="glass-card action-card" style="padding: 24px; text-align: center; border-bottom: 4px solid var(--accent);">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, rgba(253, 121, 168, 0.1), rgba(253, 121, 168, 0.2)); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 16px; color: var(--accent);">📈</div>
+        <h4 style="margin-bottom: 8px; color: var(--text-main); font-size: 1.15rem;">Skin Progress</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">View historical data</p>
+    </a>
+
+    <a href="/app/assistant" class="glass-card action-card" style="padding: 24px; text-align: center; border-bottom: 4px solid #00b894;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, rgba(0, 184, 148, 0.1), rgba(0, 184, 148, 0.2)); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 16px; color: #00b894;">💬</div>
+        <h4 style="margin-bottom: 8px; color: var(--text-main); font-size: 1.15rem;">Ask AI Assistant</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Get routine insights</p>
+    </a>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px;">
+    
+    <!-- Latest Scan Card -->
+    <div class="glass-card" style="padding: 30px; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h3 style="margin: 0; font-size: 1.4rem;">Latest Scan Results</h3>
+            <% if (mockData && mockData.latestScan) { %>
+                <span style="font-size: 0.85rem; color: var(--text-muted); background: #f0f2f5; padding: 6px 14px; border-radius: 20px; font-weight: 500;"><%= mockData.latestScan.date %></span>
+            <% } %>
+        </div>
+
+        <% if (!mockData || !mockData.latestScan) { %>
+            <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 0;">
+                <div style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;">📷</div>
+                <p style="color: var(--text-muted); margin-bottom: 24px; max-width: 250px;">Belum ada hasil scan. Mulai scan pertama Anda untuk membuat baseline.</p>
+                <a href="/app/scan" class="btn btn-primary" style="padding: 10px 24px;">Start First Scan</a>
+            </div>
+        <% } else { %>
+            <div style="display: flex; flex-direction: column;">
+                <div class="metric-row">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 10px; height: 10px; border-radius: 50%; background: <%= mockData.latestScan.acneTrend === 'improving' ? 'var(--success)' : 'var(--error)' %>;"></div>
+                        <span style="color: var(--text-main); font-weight: 500;">Acne Visual Indicator</span>
+                    </div>
+                    <strong style="color: <%= mockData.latestScan.acneTrend === 'improving' ? 'var(--success)' : 'var(--text-main)' %>; font-size: 1.15rem;"><%= mockData.latestScan.acneScore %>%</strong>
+                </div>
+
+                <div class="metric-row">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--accent);"></div>
+                        <span style="color: var(--text-main); font-weight: 500;">Redness Indicator</span>
+                    </div>
+                    <strong style="font-size: 1.15rem;"><%= mockData.latestScan.rednessScore %>%</strong>
+                </div>
+
+                <div class="metric-row">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--secondary);"></div>
+                        <span style="color: var(--text-main); font-weight: 500;">Texture Indicator</span>
+                    </div>
+                    <strong style="font-size: 1.15rem;"><%= mockData.latestScan.textureScore %>%</strong>
+                </div>
+
+                <div class="metric-row" style="margin-bottom: 0;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--primary);"></div>
+                        <span style="color: var(--text-main); font-weight: 500;">Hyperpigmentation</span>
+                    </div>
+                    <strong style="font-size: 1.15rem;"><%= mockData.latestScan.pigmentScore %>%</strong>
+                </div>
+
+                <div style="margin-top: 20px; padding: 18px; background: rgba(0, 184, 148, 0.1); border-left: 4px solid var(--success); border-radius: 0 12px 12px 0; color: #009477; display: flex; gap: 12px; align-items: flex-start;">
+                    <span style="font-size: 1.2rem;">✨</span>
+                    <div>
+                        <strong style="display: block; margin-bottom: 4px; font-size: 0.95rem;">Estimated visual change:</strong>
+                        <span style="font-size: 0.9rem; line-height: 1.4; display: block;">Overall slight improvement since last week. Keep up the good routine!</span>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    <!-- Sunscreen Check & AI Summary -->
+    <div style="display: flex; flex-direction: column; gap: 30px;">
+        
+        <!-- Sunscreen Check -->
+        <div class="glass-card" style="padding: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h3 style="margin: 0; font-size: 1.4rem;">Sunscreen Check</h3>
+                <% if (mockData && mockData.sunscreenCheck) { %>
+                    <span style="font-size: 0.85rem; color: var(--text-muted); background: #f0f2f5; padding: 6px 14px; border-radius: 20px; font-weight: 500;"><%= mockData.sunscreenCheck.date %></span>
+                <% } %>
+            </div>
+
+            <% if (!mockData || !mockData.sunscreenCheck) { %>
+                <div style="text-align: center; padding: 20px 0;">
+                    <div style="font-size: 2.5rem; margin-bottom: 15px; opacity: 0.5;">☀️</div>
+                    <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;">Belum ada data. Cek seberapa rata aplikasi sunscreen Anda.</p>
+                    <a href="/app/sunscreen" class="btn btn-secondary" style="padding: 10px 24px;">Check Now</a>
+                </div>
+            <% } else { %>
+                <div style="display: flex; align-items: center; gap: 24px; margin-bottom: 20px;">
+                    <div style="width: 90px; height: 90px; border-radius: 50%; background: conic-gradient(var(--secondary) <%= mockData.sunscreenCheck.score %>%, #e1e5ee 0); display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 4px 15px rgba(0, 206, 201, 0.2);">
+                        <div style="width: 74px; height: 74px; background: var(--surface); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.5rem; color: var(--text-main); box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);">
+                            <%= mockData.sunscreenCheck.score %>%
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; font-size: 1.2rem; color: var(--text-main); margin-bottom: 4px;">Status: <span style="color: var(--secondary);"><%= mockData.sunscreenCheck.status %></span></div>
+                        <div style="font-size: 0.95rem; color: var(--text-muted);"><span style="color: var(--text-main); font-weight: 500;">Area perhatian:</span> <%= mockData.sunscreenCheck.attentionAreas %></div>
+                    </div>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; background: rgba(0,0,0,0.02); padding: 12px; border-radius: 8px;">
+                    * RGB camera results are AI-based visual coverage estimates and not direct UV measurements.
+                </div>
+            <% } %>
+        </div>
+
+        <!-- AI Assistant CTA -->
+        <div class="glass-card ai-cta-card" style="padding: 30px; background: linear-gradient(135deg, rgba(108, 92, 231, 0.08), rgba(0, 206, 201, 0.08)); border: 1px solid rgba(108, 92, 231, 0.2); position: relative; overflow: hidden;">
+            <div style="position: absolute; right: -20px; top: -20px; font-size: 8rem; opacity: 0.05; transform: rotate(15deg);">✨</div>
+            <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px; font-size: 1.4rem; position: relative; z-index: 1;">
+                <span style="background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Ask AI Assistant</span>
+            </h3>
+            <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 20px; position: relative; z-index: 1;">Have questions about your latest results or routine?</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px; position: relative; z-index: 1;">
+                <a href="/app/assistant" class="ai-question" style="padding: 14px 20px; background: rgba(255,255,255,0.8); border-radius: 20px; font-size: 0.9rem; color: var(--text-main); border: 1px solid rgba(108, 92, 231, 0.1); transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; text-decoration: none; font-weight: 500;">
+                    "Apa yang berubah dari scan sebelumnya?"
+                    <span style="color: var(--primary); font-size: 1.2rem;">→</span>
+                </a>
+                <a href="/app/assistant" class="ai-question" style="padding: 14px 20px; background: rgba(255,255,255,0.8); border-radius: 20px; font-size: 0.9rem; color: var(--text-main); border: 1px solid rgba(108, 92, 231, 0.1); transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; text-decoration: none; font-weight: 500;">
+                    "Bagaimana urutan skincare yang sederhana?"
+                    <span style="color: var(--primary); font-size: 1.2rem;">→</span>
+                </a>
+            </div>
+            <style>
+                .ai-question:hover {
+                    background: white !important;
+                    transform: translateX(5px);
+                    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.1);
+                    border-color: rgba(108, 92, 231, 0.3) !important;
+                }
+            </style>
+        </div>
+
+    </div>
+</div>
+
+<div class="glass-card mt-4" style="padding: 30px; margin-top: 30px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h3 style="margin: 0; font-size: 1.4rem;">Skin Progress Preview</h3>
+        <a href="/app/history" style="font-size: 0.95rem; font-weight: 600; color: var(--primary);">View Full History &rarr;</a>
+    </div>
+    
+    <% if (!mockData || !mockData.progress) { %>
+        <div style="text-align: center; padding: 40px 0; background: rgba(255,255,255,0.5); border-radius: 12px; border: 1px dashed #d1d8e0;">
+            <p style="color: var(--text-muted); margin: 0;">Not enough data to show progress trends yet.</p>
+        </div>
+    <% } else { %>
+        <!-- Mock Chart Visualization -->
+        <div style="height: 180px; background: rgba(255,255,255,0.5); border-radius: 12px; border: 1px solid rgba(0,0,0,0.03); display: flex; align-items: flex-end; padding: 25px; gap: 10%;">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                <div style="width: 48px; height: 60%; background: linear-gradient(180deg, var(--primary-light), rgba(162, 155, 254, 0.3)); border-radius: 6px 6px 0 0;"></div>
+                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Week 1</span>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                <div style="width: 48px; height: 75%; background: linear-gradient(180deg, var(--primary-light), rgba(162, 155, 254, 0.3)); border-radius: 6px 6px 0 0;"></div>
+                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Week 2</span>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                <div style="width: 48px; height: 50%; background: linear-gradient(180deg, var(--primary), rgba(108, 92, 231, 0.3)); border-radius: 6px 6px 0 0; box-shadow: 0 0 15px rgba(108, 92, 231, 0.2);"></div>
+                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Week 3</span>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                <div style="width: 48px; height: 40%; background: linear-gradient(180deg, var(--primary), rgba(108, 92, 231, 0.3)); border-radius: 6px 6px 0 0; box-shadow: 0 0 15px rgba(108, 92, 231, 0.2);"></div>
+                <span style="font-size: 0.85rem; color: var(--text-main); font-weight: 700;">Current</span>
+            </div>
+        </div>
+    <% } %>
+</div>
+
+

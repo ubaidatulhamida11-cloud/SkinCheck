@@ -1,0 +1,136 @@
+<div style="margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+    <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span style="font-size: 1.5rem;">📜</span>
+            <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text-main, #1e293b); margin: 0;">Audit Log Konfigurasi Sistem</h1>
+            <span class="badge" style="background: rgba(108, 92, 231, 0.15); color: #6C5CE7; font-weight: 700; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;">SUPER ADMIN AUDIT TRAIL</span>
+        </div>
+        <p style="color: var(--text-muted, #64748b); margin: 0; font-size: 0.95rem;">Catatan lengkap riwayat modifikasi parameter AI, perubahan konfigurasi WhatsApp OTP, dan pengujian koneksi gateway.</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn btn-outline-secondary" onclick="location.reload()" style="padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.88rem;">
+            🔄 Refresh Log
+        </button>
+    </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="stat-card mb-4 p-3">
+    <div class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <input type="text" id="log-search-input" class="form-control form-control-sm" placeholder="🔍 Cari berdasarkan aksi, detail, atau user..." onkeyup="filterAuditLogs()">
+        </div>
+        <div class="col-md-4">
+            <select id="log-category-filter" class="form-select form-select-sm" onchange="filterAuditLogs()">
+                <option value="ALL">Semua Kategori Event</option>
+                <option value="AI_CONFIG">AI_CONFIG (Perubahan Model & AI)</option>
+                <option value="AI_TEST">AI_TEST (Uji Koneksi AI)</option>
+                <option value="WHATSAPP_CONFIG">WHATSAPP_CONFIG (Perubahan Gateway WhatsApp)</option>
+                <option value="WHATSAPP_TEST">WHATSAPP_TEST (Uji Koneksi WhatsApp)</option>
+            </select>
+        </div>
+        <div class="col-md-3 text-end text-muted small" id="log-count-display">
+            Menampilkan <%= (logs || []).length %> catatan
+        </div>
+    </div>
+</div>
+
+<!-- AUDIT LOGS TABLE -->
+<div class="stat-card">
+    <div class="table-responsive">
+        <table class="data-table" id="audit-table">
+            <thead>
+                <tr>
+                    <th style="width: 175px;">Waktu (WIB)</th>
+                    <th style="width: 180px;">Admin Pengubah</th>
+                    <th style="width: 160px;">Kategori</th>
+                    <th>Ringkasan Aksi</th>
+                    <th style="width: 110px;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (!logs || logs.length === 0) { %>
+                    <tr id="no-logs-row">
+                        <td colspan="5" class="text-center text-muted py-5">
+                            Belum ada riwayat perubahan konfigurasi sistem.
+                        </td>
+                    </tr>
+                <% } else { %>
+                    <% logs.forEach(log => { %>
+                        <tr class="audit-row" data-category="<%= log.category %>" data-text="<%= (log.action + ' ' + log.user_name + ' ' + log.user_email + ' ' + (log.details || '')).toLowerCase() %>">
+                            <td class="small text-muted">
+                                <%= new Date(log.timestamp).toLocaleString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) %>
+                            </td>
+                            <td>
+                                <strong style="font-size: 0.88rem; color: var(--text-main, #1e293b);"><%= log.user_name %></strong>
+                                <div class="text-muted small" style="font-size: 0.75rem;"><%= log.user_email %></div>
+                            </td>
+                            <td>
+                                <% if (log.category.includes('AI')) { %>
+                                    <span class="badge" style="background: rgba(108, 92, 231, 0.12); color: #6C5CE7; font-size: 0.75rem;">
+                                        <%= log.category %>
+                                    </span>
+                                <% } else { %>
+                                    <span class="badge" style="background: rgba(37, 211, 102, 0.15); color: #128C7E; font-size: 0.75rem;">
+                                        <%= log.category %>
+                                    </span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <div class="fw-semibold" style="font-size: 0.88rem; color: var(--text-main, #1e293b);">
+                                    <%= log.action %>
+                                </div>
+                                <% if (log.details && log.details !== '{}') { %>
+                                    <div class="text-muted small mt-1" style="font-family: monospace; font-size: 0.78rem; background: #f8fafc; padding: 4px 8px; border-radius: 4px; display: inline-block; max-width: 100%; word-break: break-all;">
+                                        <%= log.details %>
+                                    </div>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (log.status === 'SUCCESS') { %>
+                                    <span class="badge" style="background: rgba(0, 184, 148, 0.15); color: #00b894; font-size: 0.78rem;">
+                                        ● BERHASIL
+                                    </span>
+                                <% } else if (log.status === 'WARNING') { %>
+                                    <span class="badge" style="background: rgba(253, 203, 110, 0.25); color: #e17055; font-size: 0.78rem;">
+                                        ▲ WARNING
+                                    </span>
+                                <% } else { %>
+                                    <span class="badge" style="background: rgba(214, 48, 49, 0.15); color: #d63031; font-size: 0.78rem;">
+                                        ✖ GAGAL
+                                    </span>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function filterAuditLogs() {
+    const query = document.getElementById('log-search-input').value.toLowerCase().trim();
+    const category = document.getElementById('log-category-filter').value;
+    const rows = document.querySelectorAll('.audit-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const rowCategory = row.getAttribute('data-category');
+        const rowText = row.getAttribute('data-text');
+
+        const matchCategory = (category === 'ALL' || rowCategory === category);
+        const matchQuery = (!query || rowText.includes(query));
+
+        if (matchCategory && matchQuery) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    document.getElementById('log-count-display').textContent = `Menampilkan ${visibleCount} catatan`;
+}
+</script>

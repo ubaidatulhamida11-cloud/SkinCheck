@@ -1,0 +1,16 @@
+[
+  {
+    "id": "kb_1",
+    "title": "Urutan Skincare Dasar",
+    "category": "Education",
+    "content": "Urutan skincare dasar yang direkomendasikan adalah: 1. Cleanser (Pembersih wajah) 2. Treatment (Serum/Obat Jerawat, jika ada) 3. Moisturizer (Pelembap) 4. Sunscreen (Tabir surya - khusus pagi/siang).",
+    "source": "SkinCheck Internal Guidelines"
+  },
+  {
+    "id": "kb_2",
+    "title": "Memahami Hasil Sunscreen Check",
+    "category": "Education",
+    "content": "Sunscreen Check pada aplikasi ini menggunakan estimasi visual dari kamera standar (RGB). Area gelap atau kemerahan pada heatmap simulasi menunjukkan area yang mungkin kurang tertutup sunscreen. Ingat bahwa ini bukan pengukuran perlindungan UV medis secara langsung, melainkan estimasi visual pemerataan.",
+    "source": "SkinCheck Internal Guidelines"
+  }
+]

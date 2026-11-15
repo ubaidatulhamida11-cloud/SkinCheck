@@ -1,0 +1,945 @@
+<div class="assistant-wrapper my-4">
+    <!-- HEADER -->
+    <div class="assistant-header">
+        <div class="ai-profile">
+            <div class="ai-avatar">✦</div>
+            <div class="ai-info">
+                <h2>SkinCheck AI</h2>
+                <p>Your personal skincare assistant</p>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <button id="btn-clear-history" type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3" style="font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;" title="Hapus seluruh riwayat percakapan">
+                🗑️ <span>Hapus Riwayat</span>
+            </button>
+            <div class="ai-status">
+                <div class="status-dot"></div>
+                Online
+            </div>
+        </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="assistant-body">
+        
+        <!-- CONTEXT PANEL (Collapsible on mobile) -->
+        <% if (contextType && contextId) { %>
+        <div class="context-panel">
+            <div class="context-card">
+                <div class="context-card-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    <%= contextType === 'skin_scan' ? 'Latest Skin Scan' : 'Sunscreen Coverage' %>
+                </div>
+                
+                <% if (contextType === 'skin_scan') { %>
+                    <div class="context-metric">
+                        <span class="context-label">Status</span>
+                        <span class="context-value">Completed</span>
+                    </div>
+                    <div class="context-metric">
+                        <span class="context-label">Context ID</span>
+                        <span class="context-value">#<%= contextId %></span>
+                    </div>
+                <% } else if (contextType === 'sunscreen_check') { %>
+                    <div class="context-metric">
+                        <span class="context-label">Status</span>
+                        <span class="context-value">Visual Estimate</span>
+                    </div>
+                <% } %>
+                
+                <button class="context-btn btn-quick" data-text="Ask AI about this result">Ask AI about this result &rarr;</button>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- CHAT MAIN AREA -->
+        <div class="chat-section">
+            <div id="chat-messages" class="chat-messages">
+                <div class="text-center text-muted small my-2">Loading conversation...</div>
+            </div>
+
+            <!-- INPUT AREA -->
+            <div class="chat-input-area">
+                <form id="chat-form">
+                    <div class="chat-input-wrapper">
+                        <textarea id="chat-input" class="chat-input" rows="1" placeholder="Ask SkinCheck AI anything about your skin..." autocomplete="off"></textarea>
+                        <button type="submit" class="btn-send" id="btn-send" title="Send message">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        </button>
+                    </div>
+                </form>
+                <div class="safety-notice">
+                    SkinCheck AI provides educational and visual analysis insights, not medical diagnosis or treatment.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Reset and base variables for this page */
+:root {
+    --chat-bg: #F8FAFC;
+    --chat-primary: #163B66;
+    --chat-secondary: #2B6CB0;
+    --chat-accent: #E0F2FE;
+    --chat-border: #E2E8F0;
+    --chat-text-main: #1E293B;
+    --chat-text-muted: #64748B;
+    --chat-white: #FFFFFF;
+    --chat-radius: 16px;
+}
+
+.assistant-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 82vh;
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: var(--chat-white);
+    border-radius: var(--chat-radius);
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05);
+    border: 1px solid var(--chat-border);
+    overflow: hidden;
+}
+
+.assistant-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--chat-border);
+    background-color: var(--chat-white);
+}
+
+.ai-profile {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.ai-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--chat-primary), var(--chat-secondary));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(22, 59, 102, 0.2);
+}
+
+.ai-info h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--chat-primary);
+}
+
+.ai-info p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--chat-text-muted);
+}
+
+.ai-status {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: #10B981;
+    font-weight: 500;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #10B981;
+}
+
+.assistant-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.chat-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background-color: var(--chat-bg);
+}
+
+/* Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 2rem;
+    text-align: center;
+    overflow-y: auto;
+}
+
+.empty-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--chat-primary), var(--chat-secondary));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 20px rgba(22, 59, 102, 0.2);
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--chat-primary);
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: var(--chat-text-muted);
+    max-width: 400px;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    max-width: 550px;
+    width: 100%;
+}
+
+.quick-action-card {
+    background: var(--chat-white);
+    border: 1px solid var(--chat-border);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.quick-action-card:hover {
+    border-color: var(--chat-secondary);
+    box-shadow: 0 4px 12px rgba(43, 108, 176, 0.1);
+    transform: translateY(-2px);
+}
+
+.quick-icon {
+    font-size: 1.5rem;
+    background: var(--chat-bg);
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.quick-text {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--chat-text-main);
+}
+
+/* Chat Messages */
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.msg-row {
+    display: flex;
+    width: 100%;
+}
+
+.msg-row.ai {
+    justify-content: flex-start;
+}
+
+.msg-row.user {
+    justify-content: flex-end;
+}
+
+.msg-content-wrapper {
+    max-width: 75%;
+    display: flex;
+    flex-direction: column;
+}
+
+.msg-row.ai .msg-content-wrapper {
+    align-items: flex-start;
+}
+.msg-row.user .msg-content-wrapper {
+    align-items: flex-end;
+}
+
+.msg-bubble {
+    padding: 1rem 1.25rem;
+    border-radius: 16px;
+    line-height: 1.6;
+    font-size: 0.95rem;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.msg-row.user .msg-bubble {
+    background-color: var(--chat-secondary);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.msg-row.ai .msg-bubble {
+    background-color: var(--chat-white);
+    color: var(--chat-text-main);
+    border: 1px solid var(--chat-border);
+    border-bottom-left-radius: 4px;
+}
+
+.msg-row.ai.blocked .msg-bubble {
+    background-color: #FEF2F2;
+    border-color: #FECACA;
+    color: #991B1B;
+}
+
+.ai-bubble-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--chat-primary);
+}
+
+.ai-bubble-header span {
+    color: var(--chat-secondary);
+}
+
+/* Markdown formatting inside bubble */
+.msg-bubble p { margin: 0 0 0.75rem 0; }
+.msg-bubble p:last-child { margin-bottom: 0; }
+.msg-bubble ul, .msg-bubble ol { margin: 0 0 0.75rem 1.5rem; padding: 0; }
+.msg-bubble li { margin-bottom: 0.25rem; }
+.msg-bubble strong { font-weight: 600; }
+.msg-row.ai .msg-bubble strong { color: var(--chat-primary); }
+.msg-row.user .msg-bubble strong { color: white; }
+
+.msg-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.msg-action-btn {
+    background: transparent;
+    border: 1px solid var(--chat-border);
+    color: var(--chat-text-muted);
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.msg-action-btn:hover {
+    background: var(--chat-bg);
+    color: var(--chat-primary);
+    border-color: var(--chat-primary);
+}
+
+/* Typing Indicator */
+.typing-dots {
+    display: flex;
+    gap: 4px;
+    padding: 0.5rem 0;
+}
+
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    background-color: var(--chat-secondary);
+    border-radius: 50%;
+    animation: typingBounce 1.4s infinite ease-in-out both;
+}
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+@keyframes typingBounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+}
+
+/* Chat Input */
+.chat-input-area {
+    padding: 1rem 1.5rem;
+    background-color: var(--chat-white);
+    border-top: 1px solid var(--chat-border);
+}
+
+.chat-input-wrapper {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    background-color: var(--chat-bg);
+    border: 1px solid var(--chat-border);
+    border-radius: 24px;
+    padding: 0.5rem 0.5rem 0.5rem 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.chat-input-wrapper:focus-within {
+    border-color: var(--chat-secondary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1);
+    background-color: var(--chat-white);
+}
+
+.chat-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+    padding: 0.65rem 0;
+    max-height: 120px;
+    resize: none;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--chat-text-main);
+    line-height: 1.5;
+}
+
+.chat-input::placeholder {
+    color: #94A3B8;
+}
+
+.btn-send {
+    background-color: var(--chat-primary);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-send:hover:not(:disabled) {
+    background-color: var(--chat-secondary);
+    transform: scale(1.05);
+}
+
+.btn-send:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--chat-text-muted);
+}
+
+/* Context Panel */
+.context-panel {
+    width: 300px;
+    background-color: var(--chat-white);
+    border-right: 1px solid var(--chat-border);
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.context-card {
+    background: var(--chat-white);
+    border: 1px solid var(--chat-border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+
+.context-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--chat-primary);
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+}
+
+.context-metric {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.context-metric:last-child { margin-bottom: 0; }
+
+.context-label { color: var(--chat-text-muted); }
+.context-value { font-weight: 600; color: var(--chat-text-main); }
+
+.context-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 0.5rem;
+    margin-top: 1rem;
+    background: transparent;
+    border: 1px solid var(--chat-secondary);
+    color: var(--chat-secondary);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.context-btn:hover {
+    background: var(--chat-secondary);
+    color: white;
+}
+
+.safety-notice {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #94A3B8;
+    padding-top: 0.75rem;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .assistant-body {
+        flex-direction: column;
+    }
+    
+    .context-panel {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--chat-border);
+        padding: 1rem;
+    }
+    
+    .quick-actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .msg-bubble {
+        max-width: 90%;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const chatContainer = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const btnSend = document.getElementById('btn-send');
+
+    const contextType = '<%= contextType %>';
+    const contextId = '<%= contextId %>';
+    let activeConversationId = null;
+    let isWaiting = false;
+
+    // Auto-resize textarea
+    chatInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+        if(this.value === '') this.style.height = 'auto';
+    });
+    
+    // Handle Enter to send, Shift+Enter for new line
+    chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    });
+
+    function parseMarkdown(text) {
+        if (!text) return '';
+        let clean = text.replace(/\\*\\*(.*?)\\*\\*/g, '$1').replace(/\\*(.*?)\\*/g, '$1').replace(/\\*/g, '');
+        
+        // Basic list items
+        let lines = clean.split('\\n');
+        let inList = false;
+        let parsedLines = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
+            let listMatch = line.match(/^(\\s*[-*•]\\s+)(.*)/);
+            let numMatch = line.match(/^(\\s*\\d+\\.\\s+)(.*)/);
+            
+            if (listMatch) {
+                if (!inList) { parsedLines.push('<ul>'); inList = 'ul'; }
+                else if (inList === 'ol') { parsedLines.push('</ol><ul>'); inList = 'ul'; }
+                parsedLines.push('<li>' + listMatch[2] + '</li>');
+            } else if (numMatch) {
+                if (!inList) { parsedLines.push('<ol>'); inList = 'ol'; }
+                else if (inList === 'ul') { parsedLines.push('</ul><ol>'); inList = 'ol'; }
+                parsedLines.push('<li>' + numMatch[2] + '</li>');
+            } else {
+                if (inList) {
+                    parsedLines.push(inList === 'ul' ? '</ul>' : '</ol>');
+                    inList = false;
+                }
+                if (line.trim() !== '') {
+                    parsedLines.push('<p>' + line + '</p>');
+                }
+            }
+        }
+        if (inList) {
+            parsedLines.push(inList === 'ul' ? '</ul>' : '</ol>');
+        }
+        
+        return parsedLines.join('');
+    }
+
+    // Render Empty State
+    function renderEmptyState() {
+        chatContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-avatar">✦</div>
+                <h3>Hi, I'm SkinCheck AI 👋</h3>
+                <p>Understand your skin better with personalized insights, skincare education, and product recommendations.</p>
+                
+                <div class="quick-actions-grid">
+                    <div class="quick-action-card btn-quick" data-text="Explain my latest skin scan">
+                        <div class="quick-icon">🧴</div>
+                        <div class="quick-text">Explain my latest skin scan</div>
+                    </div>
+                    <div class="quick-action-card btn-quick" data-text="Explain my sunscreen coverage">
+                        <div class="quick-icon">☀️</div>
+                        <div class="quick-text">Explain my sunscreen coverage</div>
+                    </div>
+                    <div class="quick-action-card btn-quick" data-text="Teach me about skincare">
+                        <div class="quick-icon">💡</div>
+                        <div class="quick-text">Teach me about skincare</div>
+                    </div>
+                    <div class="quick-action-card btn-quick" data-text="Show products I can consider">
+                        <div class="quick-icon">🛍️</div>
+                        <div class="quick-text">Show products I can consider</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        attachQuickActions();
+    }
+
+    function attachQuickActions() {
+        document.querySelectorAll('.btn-quick').forEach(btn => {
+            btn.addEventListener('click', () => {
+                sendMessage(btn.getAttribute('data-text'));
+            });
+        });
+    }
+
+    // Load History
+    async function loadHistory() {
+        try {
+            let url = '/app/api/chat/history';
+            if (contextType && contextId) {
+                url += \`?contextType=\${contextType}&contextId=\${contextId}\`;
+            }
+
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data.success) {
+                activeConversationId = data.conversationId;
+                
+                if (data.messages.length === 0) {
+                    renderEmptyState();
+                } else {
+                    chatContainer.innerHTML = '';
+                    data.messages.forEach(msg => appendMessage(msg.role, msg.content, msg.safety_status, msg.id));
+                    scrollToBottom();
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            chatContainer.innerHTML = '<div class="text-center" style="color: red;">Failed to load conversation.</div>';
+        }
+    }
+
+    function createActionsHTML(msgId) {
+        return `
+            <div class="msg-actions">
+                <button type="button" class="msg-action-btn action-copy" title="Copy">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    Copy
+                </button>
+                <button type="button" class="msg-action-btn action-delete-msg" data-id="${msgId || ''}" title="Hapus pesan ini" style="color: #ef4444;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    Hapus
+                </button>
+            </div>
+        `;
+    }
+
+    // Append Message to UI
+    function appendMessage(role, content, safetyStatus = 'safe', msgId = null) {
+        // Remove empty state if present
+        const emptyState = chatContainer.querySelector('.empty-state');
+        if (emptyState) emptyState.remove();
+
+        const row = document.createElement('div');
+        row.className = \`msg-row \${role === 'user' ? 'user' : 'ai'} \${safetyStatus && safetyStatus.includes('blocked') ? 'blocked' : ''}\`;
+        if (msgId) row.dataset.msgId = msgId;
+        row.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'msg-content-wrapper';
+        
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-bubble';
+        
+        if (role === 'ai') {
+            const header = document.createElement('div');
+            header.className = 'ai-bubble-header';
+            header.innerHTML = \`✦ <span>SkinCheck AI</span>\`;
+            bubble.appendChild(header);
+            
+            const parsedContent = document.createElement('div');
+            parsedContent.innerHTML = parseMarkdown(content);
+            bubble.appendChild(parsedContent);
+        } else {
+            bubble.textContent = content;
+        }
+        
+        wrapper.appendChild(bubble);
+        
+        const actions = document.createElement('div');
+        actions.innerHTML = createActionsHTML(msgId);
+        
+        // Attach copy action
+        const copyBtn = actions.querySelector('.action-copy');
+        if(copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(content);
+                const originalHTML = copyBtn.innerHTML;
+                copyBtn.innerHTML = 'Copied!';
+                setTimeout(() => copyBtn.innerHTML = originalHTML, 2000);
+            });
+        }
+
+        // Attach delete action
+        const delBtn = actions.querySelector('.action-delete-msg');
+        if(delBtn) {
+            delBtn.addEventListener('click', async () => {
+                let confirmed = false;
+                if (window.showCenteredConfirm) {
+                    confirmed = await window.showCenteredConfirm({
+                        title: 'Hapus Pesan',
+                        desc: 'Apakah Anda yakin ingin menghapus pesan ini dari tampilan percakapan?',
+                        confirmText: 'Ya, Hapus',
+                        cancelText: 'Batal'
+                    });
+                } else {
+                    confirmed = confirm('Apakah Anda yakin ingin menghapus pesan ini?');
+                }
+                if (!confirmed) return;
+                const targetId = delBtn.dataset.id || row.dataset.msgId;
+                if (targetId) {
+                    try {
+                        const res = await fetch(\`/app/api/chat/message/\${targetId}\`, {
+                            method: 'DELETE'
+                        });
+                        const data = await res.json();
+                        if (!data.success) {
+                            alert(data.error || 'Gagal menghapus pesan.');
+                            return;
+                        }
+                    } catch (err) {
+                        console.error('Error deleting message:', err);
+                    }
+                }
+                row.style.opacity = '0';
+                row.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    row.remove();
+                    if (!chatContainer.querySelector('.msg-row')) {
+                        renderEmptyState();
+                    }
+                }, 200);
+            });
+        }
+        
+        wrapper.appendChild(actions.firstElementChild);
+        
+        row.appendChild(wrapper);
+        chatContainer.appendChild(row);
+        scrollToBottom();
+        return row;
+    }
+
+    function appendSystemMessage(content) {
+        appendMessage('ai', content);
+    }
+
+    function showTyping() {
+        // Remove empty state if present
+        const emptyState = chatContainer.querySelector('.empty-state');
+        if (emptyState) emptyState.remove();
+
+        const row = document.createElement('div');
+        row.id = 'typing-indicator';
+        row.className = 'msg-row ai';
+        row.innerHTML = \`
+            <div class="msg-content-wrapper">
+                <div class="msg-bubble">
+                    <div class="ai-bubble-header">✦ <span>SkinCheck AI is thinking...</span></div>
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            </div>
+        \`;
+        chatContainer.appendChild(row);
+        scrollToBottom();
+    }
+
+    function hideTyping() {
+        const indicator = document.getElementById('typing-indicator');
+        if (indicator) indicator.remove();
+    }
+
+    function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // Send Message
+    async function sendMessage(text) {
+        if (!text.trim() || isWaiting || !activeConversationId) return;
+
+        const userRow = appendMessage('user', text);
+        chatInput.value = '';
+        chatInput.style.height = 'auto'; // reset height
+        isWaiting = true;
+        btnSend.disabled = true;
+        showTyping();
+
+        try {
+            const res = await fetch('/app/api/chat/message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    conversationId: activeConversationId,
+                    message: text,
+                    contextType: contextType,
+                    contextId: contextId
+                })
+            });
+
+            const data = await res.json();
+            hideTyping();
+            
+            if (data.success) {
+                let status = 'safe';
+                if (data.response && (data.response.includes('tidak dapat memastikan penyebab kondisi tersebut') || data.response.includes('konsultasikan dengan dokter'))) {
+                    status = 'blocked';
+                }
+                appendMessage('ai', data.response, status, data.aiMessageId || null);
+                if (data.userMessageId && userRow) {
+                    userRow.dataset.msgId = data.userMessageId;
+                    const delBtn = userRow.querySelector('.action-delete-msg');
+                    if (delBtn) delBtn.dataset.id = data.userMessageId;
+                }
+            } else {
+                appendSystemMessage("Sorry, I couldn't process that request. Please try again.");
+            }
+        } catch (err) {
+            console.error(err);
+            hideTyping();
+            appendSystemMessage("Connection lost. Please try again.");
+        } finally {
+            isWaiting = false;
+            btnSend.disabled = false;
+            chatInput.focus();
+        }
+    }
+
+    // Clear History Button
+    const btnClearHistory = document.getElementById('btn-clear-history');
+    if (btnClearHistory) {
+        btnClearHistory.addEventListener('click', async () => {
+            let confirmed = false;
+            if (window.showCenteredConfirm) {
+                confirmed = await window.showCenteredConfirm({
+                    title: 'Hapus Riwayat Percakapan',
+                    desc: 'Apakah Anda yakin ingin menghapus seluruh riwayat percakapan asisten ini? Riwayat obrolan akan dibersihkan dari tampilan.',
+                    confirmText: 'Ya, Hapus',
+                    cancelText: 'Batal'
+                });
+            } else {
+                confirmed = confirm('Apakah Anda yakin ingin menghapus seluruh riwayat percakapan asisten ini?');
+            }
+            if (!confirmed) return;
+            try {
+                const res = await fetch('/app/api/chat/clear', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        conversationId: activeConversationId,
+                        contextType: contextType,
+                        contextId: contextId
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    chatContainer.innerHTML = '';
+                    renderEmptyState();
+                } else {
+                    alert(data.error || 'Gagal menghapus riwayat.');
+                }
+            } catch (err) {
+                console.error('Error clearing history:', err);
+                chatContainer.innerHTML = '';
+                renderEmptyState();
+            }
+        });
+    }
+
+    // Events
+    chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        sendMessage(chatInput.value);
+    });
+
+    // Handle initial attachment for any contextual buttons inside context panel
+    attachQuickActions();
+
+    // Start
+    loadHistory();
+});
+</script>

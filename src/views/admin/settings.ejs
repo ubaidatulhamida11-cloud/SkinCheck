@@ -1,0 +1,70 @@
+<div style="margin-bottom: 25px;">
+    <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">Pengaturan Sistem</h1>
+    <p style="color: var(--text-muted); margin: 0; font-size: 0.95rem;">Konfigurasi parameter aplikasi SkinCheck, modul AI, dan preferensi tampilan.</p>
+</div>
+
+<div class="stat-card" style="max-width: 750px; margin-bottom: 25px;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">
+        🎨 Pengaturan Tema Admin Portal
+    </h3>
+    <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 18px;">
+        Pilih mode tampilan gelap atau terang agar lebih nyaman saat mengelola data sistem.
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px;">
+        <label style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 16px; border-radius: 12px; border: 2px solid var(--border-color); background: var(--surface);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.4rem;">☀️</span>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">Mode Terang</div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted);">Light theme</div>
+                </div>
+            </div>
+            <input type="radio" name="admin_theme" id="theme-light-radio" value="light" style="width: 18px; height: 18px; accent-color: var(--primary);" onchange="window.setTheme('light')">
+        </label>
+
+        <label style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 16px; border-radius: 12px; border: 2px solid var(--border-color); background: var(--surface);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.4rem;">🌙</span>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">Mode Gelap</div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted);">Dark theme</div>
+                </div>
+            </div>
+            <input type="radio" name="admin_theme" id="theme-dark-radio" value="dark" style="width: 18px; height: 18px; accent-color: var(--primary);" onchange="window.setTheme('dark')">
+        </label>
+    </div>
+</div>
+
+<div class="stat-card" style="max-width: 750px;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 20px;">Konfigurasi AI Assistant</h3>
+    
+    <div style="margin-bottom: 20px;">
+        <label style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; color: var(--text-muted);">Mode Fallback Chatbot</label>
+        <div style="padding: 10px 14px; background: var(--surface); border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.9rem; color: var(--success); font-weight: 600;">
+            Aktif (Membaca langsung dari users.json, products.json, dan knowledge_base.json)
+        </div>
+    </div>
+
+    <div style="margin-bottom: 25px;">
+        <label style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; color: var(--text-muted);">Akun Administrator Aktif</label>
+        <div style="padding: 10px 14px; background: var(--surface); border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.9rem; color: var(--text-main);">
+            <%= locals.user ? locals.user.email : 'admin@skincheck.local' %> (Full System Access)
+        </div>
+    </div>
+
+    <a href="/admin/dashboard" class="btn btn-primary" style="padding: 10px 20px;">Kembali ke Dashboard</a>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const lightRadio = document.getElementById('theme-light-radio');
+    const darkRadio = document.getElementById('theme-dark-radio');
+    if (currentTheme === 'dark') {
+        if (darkRadio) darkRadio.checked = true;
+    } else {
+        if (lightRadio) lightRadio.checked = true;
+    }
+});
+</script>

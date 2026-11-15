@@ -1,0 +1,142 @@
+<style>
+    .result-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+    .warning-alert {
+        background: rgba(253, 203, 110, 0.15);
+        border-left: 4px solid #fdcb6e;
+        padding: 20px;
+        border-radius: 8px;
+        display: flex;
+        gap: 16px;
+        margin-bottom: 30px;
+        align-items: flex-start;
+        color: #b38422;
+        line-height: 1.5;
+    }
+    .card-layout {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        background: rgba(255,255,255,0.7);
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.8);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        margin-bottom: 40px;
+    }
+    .heatmap-col {
+        flex: 1;
+        min-width: 300px;
+        position: relative;
+        background: #000;
+        min-height: 400px;
+    }
+    .heatmap-col img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        position: absolute;
+        top: 0; left: 0;
+    }
+    .heatmap-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        mix-blend-mode: multiply;
+        background: linear-gradient(135deg, rgba(40,167,69,0.4) 0%, rgba(220,53,69,0.3) 100%);
+    }
+    .heatmap-badge {
+        position: absolute;
+        bottom: 16px;
+        left: 16px;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        backdrop-filter: blur(4px);
+    }
+    .details-col {
+        flex: 1.5;
+        min-width: 300px;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+    }
+    .status-pill {
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .status-success { background: rgba(40,167,69,0.1); color: #28a745; }
+    .status-warning { background: rgba(255,193,7,0.15); color: #d39e00; }
+    .status-danger { background: rgba(220,53,69,0.1); color: #dc3545; }
+</style>
+
+<div class="result-container">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px;">
+        <h2 style="font-size: 2.2rem; font-weight: 800; margin: 0;">Hasil Estimasi Sunscreen</h2>
+        <span style="background: rgba(0, 184, 148, 0.15); color: var(--success); padding: 6px 16px; border-radius: 50px; font-weight: 600; font-size: 0.9rem;">
+            Selesai
+        </span>
+    </div>
+
+    <div class="warning-alert">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <div>
+            <strong style="display: block; margin-bottom: 4px; font-size: 1.05rem;">Peringatan Penting</strong>
+            Hasil di bawah ini menggunakan kamera RGB sebagai <strong>estimasi visual berbasis AI</strong>. Ini <strong>bukan pengukuran UV secara langsung</strong> dan tidak menjamin proteksi UV yang sebenarnya.
+        </div>
+    </div>
+
+    <div class="card-layout">
+        <div class="heatmap-col">
+            <img src="/app/scan/image/<%= scan.id %>" alt="Scan">
+            <div class="heatmap-overlay"></div>
+            <div class="heatmap-badge">Simulasi Heatmap Visual</div>
+        </div>
+        <div class="details-col">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+                <h5 style="margin: 0; font-size: 1.3rem; font-weight: 700; color: var(--text-main);">Coverage Estimation</h5>
+                <span class="status-pill <%= analysis.coverage_score > 85 ? 'status-success' : (analysis.coverage_score > 65 ? 'status-warning' : 'status-danger') %>">
+                    <%= analysis.coverage_status %>
+                </span>
+            </div>
+            
+            <div style="font-size: 4rem; font-weight: 800; color: var(--primary); line-height: 1; margin-bottom: 8px;"><%= analysis.coverage_score %>%</div>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px;">Estimated Visual Coverage</p>
+            
+            <h6 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">Area Perhatian:</h6>
+            <% if (analysis.low_coverage_areas && analysis.low_coverage_areas.length > 0) { %>
+                <p style="color: var(--text-muted); line-height: 1.5; margin-bottom: 24px;">
+                    Area yang terindikasi memiliki coverage lebih rendah secara visual: <strong style="color: var(--text-main);"><%= analysis.low_coverage_areas.join(', ') %></strong>.
+                </p>
+            <% } else { %>
+                <p style="color: var(--text-muted); line-height: 1.5; margin-bottom: 24px;">Tidak ada area signifikan yang terindikasi memiliki coverage rendah.</p>
+            <% } %>
+            
+            <h6 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">Rekomendasi:</h6>
+            <p style="color: var(--text-muted); line-height: 1.5; margin-bottom: 0;">
+                Anda dapat mempertimbangkan mengaplikasikan kembali sunscreen secara lebih merata pada area yang terindikasi memiliki coverage lebih rendah untuk perlindungan yang lebih optimal.
+            </p>
+        </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between;">
+        <div style="display: flex; gap: 16px;">
+            <a href="/app/dashboard" class="btn btn-secondary" style="padding: 12px 24px;">Kembali ke Dashboard</a>
+            <a href="/app/sunscreen" class="btn btn-secondary" style="padding: 12px 24px; border-color: #e1e5ee; color: var(--text-muted);">Cek Ulang</a>
+        </div>
+        <a href="/app/assistant?contextType=sunscreen_check&contextId=<%= scan.id %>" class="btn btn-primary" style="padding: 12px 28px; display: inline-flex; align-items: center; gap: 10px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+            Tanya AI tentang hasil ini
+        </a>
+    </div>
+</div>

@@ -1,0 +1,26 @@
+<%- include('../partials/header') %>
+
+<main style="flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px;">
+    <div class="glass-card text-center" style="max-width: 800px; width: 100%;">
+        <h1 style="font-size: 3rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px;">
+            Your Personal AI Skincare Assistant
+        </h1>
+        <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto;">
+            Track visual skin changes, monitor your skincare routine, and get personalized insights powered by advanced computer vision.
+        </p>
+        
+        <div style="display: flex; gap: 20px; justify-content: center; margin-bottom: 30px;">
+            <a href="/auth/register" class="btn btn-primary" style="font-size: 1.1rem; padding: 14px 32px;">Get Started</a>
+            <a href="/auth/login" class="btn btn-secondary" style="font-size: 1.1rem; padding: 14px 32px;">Login</a>
+        </div>
+        
+        <div style="background: rgba(108, 92, 231, 0.05); border: 1px solid rgba(108, 92, 231, 0.1); border-radius: 12px; padding: 15px; display: inline-block;">
+            <p style="margin: 0; font-size: 0.9rem; font-weight: 500; color: var(--primary);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 5px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                Not a medical diagnosis tool. For informational purposes only.
+            </p>
+        </div>
+    </div>
+</main>
+
+<%- include('../partials/footer') %>

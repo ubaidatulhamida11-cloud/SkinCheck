@@ -1,0 +1,370 @@
+<style>
+    .camera-viewport {
+        position: relative;
+        background: #000;
+        border-radius: 16px;
+        overflow: hidden;
+        aspect-ratio: 3/4;
+        width: 100%;
+        max-height: 65vh;
+        margin-bottom: 24px;
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    }
+    .camera-video {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        object-fit: cover;
+        transform: scaleX(-1);
+    }
+    .camera-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        transform: scaleX(-1);
+    }
+    .framing-guide {
+        position: absolute;
+        top: 50%; left: 50%;
+        width: 70%; height: 60%;
+        transform: translate(-50%, -50%);
+        border: 4px dashed rgba(255,255,255,0.4);
+        border-radius: 50%;
+        pointer-events: none;
+        box-shadow: 0 0 0 9999px rgba(0,0,0,0.4);
+    }
+    .feedback-banner {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-align: center;
+        white-space: nowrap;
+        backdrop-filter: blur(4px);
+        transition: background 0.3s;
+        z-index: 10;
+    }
+    .flex-buttons {
+        display: flex;
+        gap: 16px;
+    }
+    .flex-buttons .btn {
+        flex: 1;
+        padding: 12px;
+        border-radius: 50px;
+    }
+    .review-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 0;
+    }
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(108, 92, 231, 0.2);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
+
+<!-- STEP 2: CAMERA -->
+<div id="step-camera" class="hidden">
+    <h3 class="step-title">Posisikan Wajah Anda</h3>
+    
+    <div class="camera-viewport">
+        <video id="camera-video" class="camera-video" autoplay playsinline muted></video>
+        <canvas id="overlay-canvas" class="camera-overlay"></canvas>
+        <div class="framing-guide"></div>
+        <div id="camera-feedback" class="feedback-banner">Memuat kamera...</div>
+    </div>
+
+    <div class="flex-buttons">
+        <button id="btn-cancel-camera" class="btn btn-secondary">Batal</button>
+        <button id="btn-capture" class="btn btn-primary" disabled style="opacity: 0.5; transition: opacity 0.3s;">Ambil Foto</button>
+    </div>
+</div>
+
+<!-- STEP 3: REVIEW -->
+<div id="step-review" class="hidden">
+    <h3 class="step-title">Tinjau Foto</h3>
+    
+    <div class="camera-viewport">
+        <img id="review-image" class="review-image" src="" alt="Captured Face">
+    </div>
+
+    <div style="text-align: center; margin-bottom: 24px; padding: 12px; background: rgba(0,0,0,0.03); border-radius: 8px; color: var(--text-muted); font-size: 0.9rem;">
+        Apakah foto ini sudah terlihat jelas dan terang?
+    </div>
+
+    <div class="flex-buttons">
+        <button id="btn-retake" class="btn btn-secondary">Ambil Ulang</button>
+        <button id="btn-confirm" class="btn btn-primary">Gunakan Foto</button>
+    </div>
+</div>
+
+<!-- STEP 4: SUCCESS/LOADING -->
+<div id="step-status" class="hidden loading-container">
+    <div class="spinner" id="status-spinner"></div>
+    <h3 id="status-message" style="margin-bottom: 8px;">Memproses Gambar...</h3>
+    <p style="color: var(--text-muted);" id="status-submessage">Mohon tunggu sebentar.</p>
+    <a href="/app/dashboard" id="btn-finish" class="btn btn-primary hidden" style="margin-top: 24px; padding: 12px 30px; border-radius: 50px;">Kembali ke Dashboard</a>
+</div>
+
+<!-- Load face-api.js from CDN -->
+<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Configuration from EJS context
+    const uploadUrl = '<%= uploadUrl %>';
+    const analyzeUrlPattern = '<%= analyzeUrlPattern %>'; 
+    const loadingMessage = '<%= loadingMessage || "Menganalisis Kulit..." %>';
+    const loadingSubMessage = '<%= loadingSubMessage || "Menggunakan AI untuk mengestimasi indikator visual." %>';
+
+    // UI Elements
+    const stepPrep = document.getElementById('step-preparation');
+    const stepCamera = document.getElementById('step-camera');
+    const stepReview = document.getElementById('step-review');
+    const stepStatus = document.getElementById('step-status');
+    
+    const video = document.getElementById('camera-video');
+    const canvas = document.getElementById('overlay-canvas');
+    const feedback = document.getElementById('camera-feedback');
+    const reviewImage = document.getElementById('review-image');
+    
+    // Buttons
+    const btnStart = document.getElementById('btn-start-camera');
+    const btnCancel = document.getElementById('btn-cancel-camera');
+    const btnCapture = document.getElementById('btn-capture');
+    const btnRetake = document.getElementById('btn-retake');
+    const btnConfirm = document.getElementById('btn-confirm');
+    
+    let stream = null;
+    let detectionInterval = null;
+    let modelsLoaded = false;
+    
+    let isValidToCapture = false;
+    let currentMetadata = {};
+    let capturedBase64 = null;
+
+    async function loadModels() {
+        if (modelsLoaded) return;
+        feedback.innerText = "Memuat AI Models...";
+        try {
+            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/');
+            modelsLoaded = true;
+            feedback.innerText = "Model siap. Mendeteksi kamera...";
+        } catch (e) {
+            console.error("Error loading models:", e);
+            feedback.innerText = "Gagal memuat AI. Menggunakan validasi dasar.";
+        }
+    }
+
+    btnStart.addEventListener('click', async () => {
+        stepPrep.classList.add('hidden');
+        stepCamera.classList.remove('hidden');
+        
+        await loadModels();
+        
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "user" }, 
+                audio: false 
+            });
+            video.srcObject = stream;
+        } catch (err) {
+            console.error("Camera error:", err);
+            stepCamera.classList.add('hidden');
+            stepPrep.classList.remove('hidden');
+            alert("Gagal mengakses kamera. Pastikan Anda telah memberikan izin kamera di browser Anda.");
+        }
+    });
+
+    video.addEventListener('play', () => {
+        const displaySize = { width: video.videoWidth, height: video.videoHeight };
+        faceapi.matchDimensions(canvas, displaySize);
+        
+        detectionInterval = setInterval(async () => {
+            if (video.paused || video.ended) return;
+
+            isValidToCapture = false;
+            let messages = [];
+            currentMetadata = { brightness: 0, face_detected: false, quality_score: 0 };
+
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let colorSum = 0;
+            
+            for(let x = 0, len = imageData.data.length; x < len; x+=4) {
+                const r = imageData.data[x];
+                const g = imageData.data[x+1];
+                const b = imageData.data[x+2];
+                const avg = Math.floor((r+g+b)/3);
+                colorSum += avg;
+            }
+            const brightness = Math.floor(colorSum / (canvas.width * canvas.height));
+            currentMetadata.brightness = brightness;
+
+            if (brightness < 60) {
+                messages.push("Pencahayaan terlalu rendah.");
+            } else if (brightness > 220) {
+                messages.push("Terlalu silau.");
+            }
+
+            if (modelsLoaded) {
+                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }));
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                if (detection) {
+                    currentMetadata.face_detected = true;
+                    
+                    const box = detection.box;
+                    const faceArea = box.width * box.height;
+                    const videoArea = canvas.width * canvas.height;
+                    const ratio = faceArea / videoArea;
+                    
+                    if (ratio < 0.1) {
+                        messages.push("Mendekat ke kamera.");
+                    } else if (ratio > 0.6) {
+                        messages.push("Mundur sedikit dari kamera.");
+                    }
+                } else {
+                    messages.push("Wajah belum terdeteksi.");
+                }
+            }
+
+            if (messages.length > 0) {
+                feedback.innerText = messages.join(" | ");
+                feedback.style.backgroundColor = "rgba(220, 53, 69, 0.8)"; 
+                btnCapture.disabled = true;
+                btnCapture.style.opacity = "0.5";
+            } else {
+                currentMetadata.quality_score = 90; 
+                isValidToCapture = true;
+                feedback.innerText = "Posisi Sempurna. Silakan Ambil Foto.";
+                feedback.style.backgroundColor = "rgba(0, 184, 148, 0.8)"; 
+                btnCapture.disabled = false;
+                btnCapture.style.opacity = "1";
+            }
+
+        }, 500);
+    });
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+        if (detectionInterval) {
+            clearInterval(detectionInterval);
+        }
+    }
+
+    btnCancel.addEventListener('click', () => {
+        stopCamera();
+        stepCamera.classList.add('hidden');
+        stepPrep.classList.remove('hidden');
+    });
+
+    btnCapture.addEventListener('click', () => {
+        if (!isValidToCapture) return;
+        
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = video.videoWidth;
+        tempCanvas.height = video.videoHeight;
+        const ctx = tempCanvas.getContext('2d');
+        ctx.translate(tempCanvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+        
+        capturedBase64 = tempCanvas.toDataURL('image/jpeg', 0.9);
+        reviewImage.src = capturedBase64;
+        
+        stopCamera();
+        stepCamera.classList.add('hidden');
+        stepReview.classList.remove('hidden');
+    });
+
+    btnRetake.addEventListener('click', () => {
+        capturedBase64 = null;
+        stepReview.classList.add('hidden');
+        btnStart.click(); 
+    });
+
+    btnConfirm.addEventListener('click', async () => {
+        stepReview.classList.add('hidden');
+        stepStatus.classList.remove('hidden');
+        
+        try {
+            const response = await fetch(uploadUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    imageBase64: capturedBase64,
+                    metadata: currentMetadata
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                document.getElementById('status-message').innerText = loadingMessage;
+                document.getElementById('status-submessage').innerText = loadingSubMessage;
+                
+                const specificAnalyzeUrl = analyzeUrlPattern.replace('ID_PLACEHOLDER', result.scanId);
+                const analyzeResponse = await fetch(specificAnalyzeUrl, {
+                    method: 'POST'
+                });
+                const analyzeResult = await analyzeResponse.json();
+
+                if (analyzeResult.success && analyzeResult.redirect) {
+                    window.location.href = analyzeResult.redirect;
+                } else {
+                    throw new Error(analyzeResult.message || 'Gagal menganalisis');
+                }
+            } else {
+                throw new Error(result.message || 'Gagal menyimpan');
+            }
+            
+        } catch (err) {
+            console.error("Upload error:", err);
+            document.getElementById('status-spinner').classList.add('hidden');
+            document.getElementById('status-message').innerText = "Terjadi Kesalahan";
+            document.getElementById('status-message').style.color = "var(--error)";
+            document.getElementById('status-submessage').innerText = err.message;
+            
+            const retryBtn = document.createElement('button');
+            retryBtn.className = "btn btn-secondary mt-3 retry-btn-custom";
+            retryBtn.innerText = "Coba Lagi";
+            retryBtn.onclick = () => {
+                document.querySelectorAll('.retry-btn-custom').forEach(e => e.remove());
+                stepStatus.classList.add('hidden');
+                document.getElementById('status-spinner').classList.remove('hidden');
+                document.getElementById('status-message').innerText = "Memproses Gambar...";
+                document.getElementById('status-message').style.color = "inherit";
+                document.getElementById('status-submessage').innerText = "Mohon tunggu sebentar.";
+                stepReview.classList.remove('hidden');
+            };
+            document.getElementById('step-status').appendChild(retryBtn);
+        }
+    });
+});
+</script>

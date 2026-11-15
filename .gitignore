@@ -1,0 +1,40 @@
+# Node modules dependencies
+node_modules/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+*.env
+test_quota.js
+
+# User uploads & media
+data/uploads/*
+!data/uploads/.gitkeep
+
+# Sensitive and dynamic local database records
+data/system_config.json
+data/users.json
+data/otp_challenges.json
+data/login_activities.json
+data/ai_messages.json
+data/ai_conversations.json
+data/audit_logs.json
+data/scans.json
+data/analysis.json
+data/sunscreen.json
+
+# Scratch and ad-hoc scripts
+scratch/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

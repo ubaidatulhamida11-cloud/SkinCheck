@@ -1,0 +1,78 @@
+<style>
+    .scan-container {
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+    .info-alert {
+        background: rgba(108, 92, 231, 0.1);
+        border-left: 4px solid var(--primary);
+        padding: 16px 20px;
+        border-radius: 8px;
+        color: var(--primary);
+        margin-bottom: 24px;
+        line-height: 1.5;
+        font-size: 0.95rem;
+    }
+    .prep-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 30px 0;
+    }
+    .prep-list li {
+        position: relative;
+        padding-left: 28px;
+        margin-bottom: 12px;
+        color: var(--text-muted);
+        line-height: 1.5;
+    }
+    .prep-list li::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        top: 0;
+        color: var(--primary);
+        font-weight: bold;
+    }
+    .step-title {
+        text-align: center;
+        margin-bottom: 24px;
+        font-size: 1.8rem;
+    }
+    .hidden {
+        display: none !important;
+    }
+</style>
+
+<div class="scan-container">
+    <div class="glass-card" style="padding: 40px 30px;">
+        
+        <!-- STEP 1: PREPARATION -->
+        <div id="step-preparation">
+            <h3 class="step-title">Face Scan</h3>
+            <div class="info-alert">
+                <strong style="display: block; margin-bottom: 4px;">Perhatian</strong>
+                SkinCheck menggunakan gambar untuk menghasilkan analisis visual. Hasilnya bersifat informatif dan bukan diagnosis medis.
+            </div>
+            
+            <h5 style="margin-bottom: 16px; font-size: 1.1rem;">Persiapan:</h5>
+            <ul class="prep-list">
+                <li>Pastikan wajah berada di area yang cukup terang.</li>
+                <li>Lepaskan hambatan yang menutupi area wajah jika memungkinkan.</li>
+                <li>Hadapkan wajah lurus ke kamera.</li>
+                <li>Posisikan wajah di dalam panduan (framing guide).</li>
+                <li>Jaga wajah tetap stabil saat mengambil gambar.</li>
+            </ul>
+
+            <button id="btn-start-camera" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1.1rem; border-radius: 50px;">Mulai Face Scan</button>
+        </div>
+
+        <%- include('../partials/camera_module', { 
+            uploadUrl: '/app/scan', 
+            analyzeUrlPattern: '/app/scan/ID_PLACEHOLDER/analyze',
+            loadingMessage: 'Menganalisis Kulit...',
+            loadingSubMessage: 'Menggunakan AI untuk mengestimasi indikator visual.'
+        }) %>
+
+    </div>
+</div>
