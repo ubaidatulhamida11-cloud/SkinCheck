@@ -9,7 +9,7 @@
 
 | No | Nama Lengkap | NIM | Peran / Kontribusi |
 |:--:|:-------------|:---:|:-------------------|
-| 1  | [Robi Muhamad Wahyudi] | [41257149] | [Computer Vision & ML Engineer (Web & Image Processing)] |
+| 1  | [Pria Budi Santoso] | [41257149] | [Computer Vision & ML Engineer (Web & Image Processing)] |
 | 2  | [Robi Muhamad Wahyudi] | [41257156] | [Project Manager, Lead Integrator & Quality Assurance] |
 | 3  | [Satria Fibi Saputra] | [41257159] | [Frontend Web Developer (React / Next.js / Vue) |
 | 4  | [Ubai Datul Hamida] | [41257165] | [AI Assistant & RAG Engineer (LLM & Knowledge Base)] |
