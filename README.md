@@ -176,7 +176,7 @@ Aplikasi SkinCheck mengintegrasikan dua pilar teknologi Artificial Intelligence:
 Demonstrasi alur kerja, pengujian fitur, dan arsitektur aplikasi SkinCheck dapat dilihat melalui tautan video berikut:
 
 > 📺 **Link Video Demonstrasi Aplikasi:**  
-> **[[TEMPAT_LINK_YOUTUBE_DEMO_APLIKASI](https://youtu.be/jo3pBJXKiwc)]** *(Silakan ganti dengan tautan YouTube yang telah diunggah)*
+> **[(https://youtu.be/jo3pBJXKiwc)]**
 
 ---
 
